@@ -13,6 +13,8 @@ GET		/register								UserController.Register
 POST	/register								UserController.DoRegister
 GET		/logout									UserController.Logout
 GET		/lobby/list								LobbyController.List
+GET		/lobby/list/:game						LobbyController.List
+GET		/lobby/list/:game/:title				LobbyController.List
 GET		/lobby/join/:lobbyid					LobbyController.Join
 GET		/lobby/start/:lobbyid					LobbyController.StartLobby
 GET		/lobby/kick/:lobbyid/:userid			LobbyController.KickPlayer

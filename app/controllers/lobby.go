@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/daemonfire300/pleyusweb/app/models"
 	"github.com/revel/revel"
+	"strings"
 	"time"
 )
 
@@ -15,20 +16,37 @@ func (c LobbyController) Index() revel.Result {
 	return c.Render()
 }
 
-func (c LobbyController) List() revel.Result {
+func (c LobbyController) List(game string, title string) revel.Result {
 	var lobbys []*models.Lobby
-	var searchQueryParts []string
-	searchQuery = " WHERE "
-	searchGame = revel.Request.FormValue("game")
-	searchTitle = revel.Request.FormValue("title")
+	var queryParts []string
+	searchQuery := "  "
+	var gameid int64
 
-	if searchGame != "" {
-		searchQueryParts = append(searchQueryParts, " gameid = :gameid ")
+	if game != "" {
+		var g models.Game
+		err := c.Txn.SelectOne(&g, "SELECT id FROM games WHERE name = $1", game)
+		if err != nil {
+			revel.INFO.Println(err)
+		} else {
+			gameid = g.Id
+		}
 	}
-	if searchTitle != "" {
-		searchQueryParts = append(searchQueryParts, " title % :gameid ")
+	if gameid > 0 {
+		queryParts = append(queryParts, " gameid = :gameid ")
 	}
-	results, err := c.Txn.Select(models.Lobby{}, "SELECT * FROM lobbys")
+	if title != "" {
+		queryParts = append(queryParts, " title % :gameid ") // % needs pg_trgm
+		// CREATE EXTENSION pg_trgm; --> http://www.rdegges.com/easy-fuzzy-text-searching-with-postgresql/
+	}
+	if len(queryParts) > 0 {
+		searchQuery += " WHERE "
+		searchQuery += strings.Join(queryParts, " AND ")
+		revel.INFO.Println("Using search parameters", game, title, " generated query ", searchQuery)
+	}
+	results, err := c.Txn.Select(models.Lobby{}, "SELECT * FROM lobbys "+searchQuery, map[string]interface{}{
+		"gameid": gameid,
+		"title":  title,
+	})
 	if err != nil {
 		revel.INFO.Println(err)
 	} else {
