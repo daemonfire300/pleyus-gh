@@ -1,0 +1,85 @@
+{{set . "title" "Create Lobby"}}
+{{template "header.html" .}}
+
+<header class="hero-unit" style="background-color:#A9F16C">
+  <div class="container">
+    <div class="row">
+      <div class="hero-text">
+      </div>
+    </div>
+  </div>
+</header>
+<form action="{{url "LobbyController.Create"}}" method="POST">
+  {{with $field := field "lobby.Title" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Title:</strong>
+      <input type="text" name="{{$field.Name}}" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  {{with $field := field "lobby.Access" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Access:</strong>
+      <input type="text" name="{{$field.Name}}" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  {{with $field := field "lobby.SkillLevel" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>SkillLevel:</strong>
+      <input type="text" name="{{$field.Name}}" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  {{ $games := .games }}
+  {{with $field := field "lobby.GameId" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Game:</strong>
+      <select name="{{$field.Name}}">
+        {{ range $games }}
+        {{ $gameid := inttostring .Id}}
+        {{option $field $gameid .Name}}
+        {{ end }}
+      </select>
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  {{with $field := field "lobby.MaxUsers" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Max User:</strong>
+      <input type="text" name="{{$field.Name}}" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  {{with $field := field "lobby.EstimatedPlayTime" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Estimated Playtime:</strong>
+      <input type="text" name="{{$field.Name}}" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  {{with $field := field "lobby.EstimatedStartTime" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Estimated Starttime:</strong>
+      <input type="text" name="{{$field.Name}}" class="datepicker" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+    <script>
+    $('.datepicker').pickatime({
+      format: "H:i"
+    });
+    </script>
+  {{end}}
+  <p class="buttons">
+    <input type="submit" value="Create"> <a href="{{url "App.Index"}}">Abort</a>
+  </p>
+</form>
+<div class="container">
+  <div class="row">
+    <div class="span6">
+      {{template "flash.html" .}}
+    </div>
+  </div>
+</div>
+
+{{template "footer.html" .}}

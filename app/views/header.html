@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>{{.title}}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" href="/public/css/bootstrap.css">
+    <link rel="shortcut icon" type="image/png" href="/public/img/favicon.png">
+    <script src="/public/js/jquery-1.9.1.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/public/js/pickadate/lib/picker.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/public/js/pickadate/lib/picker.date.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/public/js/pickadate/lib/picker.time.js" type="text/javascript" charset="utf-8"></script>
+    {{range .moreStyles}}
+      <link rel="stylesheet" type="text/css" href="/public/{{.}}">
+    {{end}}
+    <link rel="stylesheet" type="text/css" href="/public/js/pickadate/lib/themes/default.css">
+    <link rel="stylesheet" type="text/css" href="/public/js/pickadate/lib/themes/default.date.css">
+    <link rel="stylesheet" type="text/css" href="/public/js/pickadate/lib/themes/default.time.css">
+    {{range .moreScripts}}
+      <script src="/public/{{.}}" type="text/javascript" charset="utf-8"></script>
+    {{end}}
+  </head>
+  <body>
+    <div class="container-fluid">
+    <div class="row">
+      <div class=".col-md-4 .col-md-offset-4">{{if .isAuth}}<a href="{{url "UserController.Logout"}}">Logout</a> <span>{{.authUser.Username}}</span>{{else}}<a href="{{url "UserController.Login"}}">Login</a> OR <a href="{{url "UserController.Register"}}">Register</a>{{end}}</div>
+  </div>
+  <div class="row">
+      <div class=".col-md-4 .col-md-offset-4"><ul><li><a href="{{url "LobbyController.Create"}}">Create Lobby</a></li><li><a href="{{url "LobbyController.List"}}">Lobbys</a></li></ul></div>
+  </div>
+</div>

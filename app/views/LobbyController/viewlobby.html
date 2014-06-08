@@ -1,0 +1,72 @@
+{{set . "title" "View Lobby"}}
+{{template "header.html" .}}
+<div class="container">
+  <div class="row">
+    <h1>{{ .lobby.Title }} ({{ .lobby.State }}d)</h1>
+    <h2>Level ({{ .lobby.SkillLevel }})</h2>
+  </div>
+  <div class="row">
+    {{ if eq .authUser.LobbyId .lobby.Id }}
+    <div>
+      <a href="{{url "LobbyController.Leave" .lobby.Id}}">Leave Lobby</a>
+    </div>
+    {{ else }}
+    {{ if .canJoinLobby }}
+    <div>
+      <form action="{{url "LobbyController.Join" .lobby.Id}}" method="GET">
+        {{ if .hasPassword }}
+        <label for="password">Password</label><input id="password" type="" name="password" value="" />
+        {{ end }}
+        <button type="submit">Join Lobby</button>
+      </form>
+    </div>
+    {{ end }}
+    {{ end }}
+    {{ if eq .authUser.Id .lobby.OwnerId }}
+    <div>
+      <a href="{{url "LobbyController.State" .lobby.Id "close"}}">Close</a> |
+      <a href="{{url "LobbyController.State" .lobby.Id "open"}}">Open</a> ||
+      <a href="{{url "LobbyController.StartLobby" .lobby.Id }}">Start</a> 
+    </div>
+    {{ end }}
+    {{ if .canViewLobby }}
+    <div>
+      <span>Players</span>
+    </div>
+    <hr />
+    <table class=".table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Badges</th>
+      </tr>
+    </thead>
+    <tbody>
+    {{ if .lobby.Players}}
+    {{ $lobby := .lobby }}
+    {{ range .lobby.Players }}
+    <tr>
+      <td><a href="{{url "UserController.ViewProfile" .Id}}">{{ .Username }}</a></td>
+      <td>Badges</td>
+      <td><a href="{{url "LobbyController.KickPlayer" $lobby.Id .Id}}">Kick</a></td>
+    </tr>
+    {{ end }}
+    {{ end }}
+  </tbody>
+  </table>
+  {{ else }}
+  <div>
+    <p>This lobby is private, you may join to view it</p>
+  </div>
+  {{ end }}
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+    <div class="span6">
+      {{template "flash.html" .}}
+    </div>
+  </div>
+</div>
+
+{{template "footer.html" .}}

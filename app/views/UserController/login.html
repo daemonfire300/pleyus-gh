@@ -1,0 +1,31 @@
+{{set . "title" "Login"}}
+{{template "header.html" .}}
+
+<h1>Register:</h1>
+
+<form action="{{url "UserController.Login"}}" method="POST">
+  {{with $field := field "username" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Username:</strong>
+      <input type="text" name="{{$field.Name}}" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  {{with $field := field "password" .}}
+    <p class="{{$field.ErrorClass}}">
+      <strong>Password:</strong> <input type="password" name="{{$field.Name}}" size="16" value="{{$field.Flash}}"> *
+      <span class="error">{{$field.Error}}</span>
+    </p>
+  {{end}}
+  <p class="buttons">
+    <input type="submit" value="Login"> <a href="{{url "App.Index"}}">Cancel</a>
+  </p>
+</form>
+<div class="container">
+  <div class="row">
+    <div class="span6">
+      {{template "flash.html" .}}
+    </div>
+  </div>
+</div>
+{{template "footer.html" .}}

@@ -1,0 +1,43 @@
+{{set . "title" "Create Lobby"}}
+{{template "header.html" .}}
+<div class="container">
+  <div class="row">
+    <div>
+      <form>
+        <input type="text" placeholder="Search..." />
+        <input type="submit" value="Search" />
+      </form>
+    </div>
+    <table class=".table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Game</th>
+        <th>Skill Level</th>
+      </tr>
+    </thead>
+    <tbody>
+    {{ if .lobbys}}
+    {{ range .lobbys }}
+    <tr>
+      <td><span>{{ .Title }}</span></td>
+      <td>{{ .Game.Name }}</td>
+      <td>{{ .SkillLevel }}</td>
+      {{ $id := .Id}}
+      <td><a href="{{url "LobbyController.ViewLobby" $id}}">View</a></td>
+    </tr>
+    {{ end }}
+    {{ end }}
+  </tbody>
+  </table>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+    <div class="span6">
+      {{template "flash.html" .}}
+    </div>
+  </div>
+</div>
+
+{{template "footer.html" .}}
