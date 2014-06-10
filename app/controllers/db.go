@@ -38,6 +38,7 @@ func setupTables() {
 	Dbm.AddTableWithName(models.Game{}, "games").SetKeys(true, "Id")
 	Dbm.AddTableWithName(models.LobbyInvite{}, "lobbyinvites").SetKeys(true, "Id")
 	Dbm.AddTableWithName(models.Friend{}, "friends").SetKeys(true, "Id")
+	lobbymetaTable := Dbm.AddTableWithName(models.LobbyMeta{}, "lobbymeta").SetKeys(true, "Id")
 
 	userTable.ColMap("Lobby").Transient = true
 	lobbyTable.ColMap("Owner").Transient = true
@@ -45,7 +46,8 @@ func setupTables() {
 	lobbyTable.ColMap("Players").Transient = true
 	lobbyuserTable.ColMap("Lobby").Transient = true
 	lobbyuserTable.ColMap("User").Transient = true
-	Dbm.TraceOn("[gorp]", revel.INFO)
+	lobbymetaTable.ColMap("Lobby").Transient = true
+	Dbm.TraceOn("[===|gorp|===]", revel.INFO)
 	err := Dbm.CreateTablesIfNotExists()
 	if err != nil {
 		revel.ERROR.Fatal("Could not create tables")

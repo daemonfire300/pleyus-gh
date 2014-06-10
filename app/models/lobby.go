@@ -29,6 +29,16 @@ type Lobby struct {
 	Rating             int
 }
 
+type LobbyMeta struct {
+	Id              int64
+	LobbyId         int64
+	Lobby           *Lobby
+	Description     string
+	Server          string
+	VoiceServer     string
+	VoiceServerType string
+}
+
 func NewLobby(title string, access string, owner *User, state string, game *Game, skillLevel int, estimatedPlayTime int, estimatedStartTime time.Time) *Lobby {
 	return &Lobby{
 		Title:              title,
