@@ -36,7 +36,7 @@ func (c LobbyController) List(game string, title string) revel.Result {
 		queryParts = append(queryParts, " gameid = :gameid ")
 	}
 	if title != "" {
-		queryParts = append(queryParts, " title % :gameid ") // % needs pg_trgm
+		queryParts = append(queryParts, " title % :title ") // % needs pg_trgm
 		// CREATE EXTENSION pg_trgm; --> http://www.rdegges.com/easy-fuzzy-text-searching-with-postgresql/
 	}
 	if len(queryParts) > 0 {
@@ -48,6 +48,9 @@ func (c LobbyController) List(game string, title string) revel.Result {
 		"gameid": gameid,
 		"title":  title,
 	})
+	revel.INFO.Println("gameid", gameid)
+	revel.INFO.Println("title", title)
+	revel.INFO.Println(searchQuery)
 	if err != nil {
 		revel.INFO.Println(err)
 	} else {
