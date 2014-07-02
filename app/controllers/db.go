@@ -96,6 +96,15 @@ func (c *DatabaseController) GetUserById(id int64) (*models.User, error) {
 	return obj.(*models.User), nil
 }
 
+func (c *DatabaseController) GetLobbyById(id int64) (*models.Lobby, error) {
+	obj, err := c.Txn.Get(models.Lobby{}, id)
+	if err != nil {
+		revel.INFO.Println("Lobby with id ", id, " not found")
+		return nil, err
+	}
+	return obj.(*models.Lobby), nil
+}
+
 func (c *DatabaseController) GetUserByName(username string) (*models.User, error) {
 	var user models.User
 	err := c.Txn.SelectOne(&user, "SELECT * FROM users WHERE username = $1", username)

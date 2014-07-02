@@ -74,8 +74,8 @@ func (c LobbyController) Join(lobbyid int64) revel.Result {
 		revel.ERROR.Println(err)
 		return c.RenderJson(err.Error())
 	}
-	var lobby models.Lobby
-	err = c.Txn.SelectOne(&lobby, "SELECT * FROM lobbys WHERE id = $1", lobbyid)
+	var lobby *models.Lobby
+	lobby, err = c.GetLobbyById(lobbyid)
 	if err != nil {
 		revel.ERROR.Println(err)
 		return c.RenderJson(err.Error())
@@ -93,7 +93,7 @@ func (c LobbyController) Join(lobbyid int64) revel.Result {
 		c.Flash.Error("Lobby lobby has already been started")
 		return c.Redirect(App.Index)
 	}
-	user.Lobby = &lobby
+	user.Lobby = lobby
 	c.UpdateUser(user)
 
 	return c.Redirect("/lobby/view/%d", lobbyid)
@@ -109,17 +109,24 @@ func (c LobbyController) isValidState(state string) bool {
 	return false
 }
 
+func (c LobbyController) isLobbyOwnerFlash(user *models.User, lobbyid int64) bool {
+	if user.LobbyId != lobbyid {
+		c.Flash.Error("You are not the lobby owner")
+		return false
+	}
+	return true
+}
+
 func (c LobbyController) State(lobbyid int64, state string) revel.Result {
 	user, err := c.getUser()
 	if err != nil {
 		return c.Redirect(UserController.Login)
 	}
-	if user.LobbyId != lobbyid {
-		c.Flash.Error("You are not the lobby owner")
+	if !c.isLobbyOwnerFlash(user, lobbyid) {
 		return c.Redirect("/lobby/view/%d", lobbyid)
 	}
-	var lobby models.Lobby
-	err = c.Txn.SelectOne(&lobby, "SELECT * FROM lobbys WHERE id = $1", lobbyid)
+	var lobby *models.Lobby
+	lobby, err = c.GetLobbyById(lobbyid)
 	if err != nil && err != sql.ErrNoRows {
 		revel.ERROR.Println(err)
 		panic(err)
@@ -138,7 +145,7 @@ func (c LobbyController) State(lobbyid int64, state string) revel.Result {
 	}
 	c.Validation.Required(state)
 	lobby.State = state
-	c.UpdateLobby(&lobby)
+	c.UpdateLobby(lobby)
 	return c.Redirect("/lobby/view/%d", lobbyid)
 }
 
@@ -156,12 +163,11 @@ func (c LobbyController) StartLobby(lobbyid int64) revel.Result {
 	if err != nil {
 		return c.Redirect(UserController.Login)
 	}
-	if user.LobbyId != lobbyid {
-		c.Flash.Error("You are not the lobby owner")
+	if !c.isLobbyOwnerFlash(user, lobbyid) {
 		return c.Redirect("/lobby/view/%d", lobbyid)
 	}
-	var lobby models.Lobby
-	err = c.Txn.SelectOne(&lobby, "SELECT * FROM lobbys WHERE id = $1", lobbyid)
+	var lobby *models.Lobby
+	lobby, err = c.GetLobbyById(lobbyid)
 	if err != nil && err != sql.ErrNoRows {
 		revel.ERROR.Println(err)
 		panic(err)
@@ -177,8 +183,41 @@ func (c LobbyController) StartLobby(lobbyid int64) revel.Result {
 	}
 
 	lobby.State = "starting"
-	c.UpdateLobby(&lobby)
-	go c.startLobby(&lobby)
+	c.UpdateLobby(lobby)
+	go c.startLobby(lobby)
+	return c.Redirect("/lobby/view/%d", lobbyid)
+}
+
+func (c LobbyController) EndLobby(lobbyid int64) revel.Result {
+	user, err := c.getUser()
+	if err != nil {
+		return c.Redirect(UserController.Login)
+	}
+	if !c.isLobbyOwnerFlash(user, lobbyid) {
+		return c.Redirect("/lobby/view/%d", lobbyid)
+	}
+	var lobby *models.Lobby
+	lobby, err = c.GetLobbyById(lobbyid)
+	if err != nil && err != sql.ErrNoRows {
+		revel.ERROR.Println(err)
+		panic(err)
+	}
+	if err == sql.ErrNoRows {
+		c.Flash.Error("Lobby not found")
+		return c.Redirect(App.Index)
+	}
+
+	if lobby.State != "started" {
+		c.Flash.Success("Lobby already done or has not been started")
+		return c.Redirect("/lobby/view/%d", lobbyid)
+	}
+	/*if lobby.State == "done"{
+		c.Flash.Success("Lobby already done or started")
+		return c.Redirect("/lobby/view/%d", lobbyid)
+	}*/
+
+	lobby.State = "done"
+	c.UpdateLobby(lobby)
 	return c.Redirect("/lobby/view/%d", lobbyid)
 }
 
@@ -187,12 +226,13 @@ func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
 	if err != nil {
 		return c.Redirect(UserController.Login)
 	}
-	var lobby models.Lobby
+	var lobby *models.Lobby
 	canJoinLobby := false
 	canViewLobby := true
 	hasPassword := (lobby.Password.String != "")
 
-	err = c.Txn.SelectOne(&lobby, "SELECT * FROM lobbys WHERE id = $1", lobbyid)
+	lobby, err = c.GetLobbyById(lobbyid)
+	//err = c.Txn.SelectOne(&lobby, "SELECT * FROM lobbys WHERE id = $1", lobbyid)
 	if err != nil && err != sql.ErrNoRows {
 		revel.ERROR.Println(err)
 		panic(err)
