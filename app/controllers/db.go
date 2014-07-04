@@ -146,3 +146,26 @@ func (c *DatabaseController) UpdateLobby(lobby *models.Lobby) {
 		revel.INFO.Println(err)
 	}
 }
+
+func (c *DatabaseController) SaveLobbyMeta(m *models.LobbyMeta) {
+	err := c.Txn.Insert(m)
+	if err != nil {
+		revel.INFO.Println(err)
+	}
+}
+
+func (c *DatabaseController) UpdateLobbyMeta(m *models.LobbyMeta) {
+	aff, err := c.Txn.Update(m)
+	revel.INFO.Println("Affected rows: ", aff)
+	if err != nil {
+		revel.INFO.Println(err)
+	}
+}
+
+func (c *DatabaseController) SaveObject(o *interface{}) {
+	aff, err := c.Txn.Update(o)
+	revel.INFO.Println("Affected rows: ", aff)
+	if err != nil {
+		revel.INFO.Println(err)
+	}
+}

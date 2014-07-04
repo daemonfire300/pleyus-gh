@@ -23,7 +23,7 @@ GET		/lobby/view/:lobbyid					LobbyController.ViewLobby
 GET		/lobby/leave/:lobbyid					LobbyController.Leave
 GET		/lobby/state/:lobbyid/:state			LobbyController.State
 GET		/lobby/create							LobbyController.Create
-POST	/lobby/create							LobbyController.DoCreate
+POST	/lobby/create							LobbyController.PostCreate
 
 
 # Ignore favicon requests

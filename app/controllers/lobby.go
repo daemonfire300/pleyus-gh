@@ -110,7 +110,10 @@ func (c LobbyController) isValidState(state string) bool {
 }
 
 func (c LobbyController) isLobbyOwnerFlash(user *models.User, lobbyid int64) bool {
-	if user.LobbyId != lobbyid {
+	// TODO: This does not actually indicate if you are the lobbyowner....
+	// get lobby
+	user.GetLobby(c.Txn)
+	if user.Lobby.OwnerId != user.Id || user.LobbyId != lobbyid {
 		c.Flash.Error("You are not the lobby owner")
 		return false
 	}
@@ -221,15 +224,26 @@ func (c LobbyController) EndLobby(lobbyid int64) revel.Result {
 	return c.Redirect("/lobby/view/%d", lobbyid)
 }
 
+func (c LobbyController) PostEditMeta(lobbyid int64, meta models.LobbyMeta) revel.Result {
+	user, err := c.getUser()
+	if err != nil {
+		return c.Redirect(UserController.Login)
+	}
+	if c.isLobbyOwnerFlash(user, lobbyid) {
+		return c.Redirect("/lobby/view/%d", lobbyid)
+	}
+
+	c.SaveLobbyMeta(m)
+
+	return c.Redirect(App.Index)
+}
+
 func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
 	user, err := c.getUser()
 	if err != nil {
 		return c.Redirect(UserController.Login)
 	}
 	var lobby *models.Lobby
-	canJoinLobby := false
-	canViewLobby := true
-	hasPassword := (lobby.Password.String != "")
 
 	lobby, err = c.GetLobbyById(lobbyid)
 	//err = c.Txn.SelectOne(&lobby, "SELECT * FROM lobbys WHERE id = $1", lobbyid)
@@ -241,6 +255,9 @@ func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
 		c.Flash.Error("Lobby not found")
 		return c.Redirect(App.Index)
 	}
+	canJoinLobby := false
+	canViewLobby := true
+	hasPassword := (lobby.Password.String != "")
 	lobby.GetPlayers(c.Txn)
 	if user.LobbyId == 0 {
 		canJoinLobby = true
@@ -248,7 +265,11 @@ func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
 	if canJoinLobby && lobby.Access == "private" && lobby.OwnerId != user.Id {
 		canViewLobby = false
 	}
-	return c.Render(lobby, canJoinLobby, canViewLobby, hasPassword)
+	// get lobbymeta (server ip, description etc)
+	var meta *models.LobbyMeta
+	meta, err = lobby.GetMeta(c.Txn)
+	startsInMinutes := int(lobby.EstimatedStartTime.Sub(time.Now()).Minutes())
+	return c.Render(lobby, canJoinLobby, canViewLobby, hasPassword, startsInMinutes, meta)
 }
 
 func (c LobbyController) KickPlayer(userid int64, lobbyid int64) revel.Result {
@@ -363,7 +384,7 @@ func (c LobbyController) GetGames() revel.Result {
 	return c.RenderJson(games)
 }
 
-func (c LobbyController) DoCreate(lobby models.Lobby) revel.Result {
+func (c LobbyController) PostCreate(lobby models.Lobby) revel.Result {
 	if auth := c.RenderArgs["isAuth"]; auth == false {
 		return c.Redirect(UserController.Login)
 	}
@@ -378,8 +399,12 @@ func (c LobbyController) DoCreate(lobby models.Lobby) revel.Result {
 	if err != nil {
 		revel.INFO.Println(err)
 		c.Validation.Error("Not a valid date").Key("lobby.EstimatedStartTime")
+	} else {
+		now := time.Now()
+		ets = time.Date(now.Year(), now.Month(), now.Day(), ets.Hour(), ets.Minute(), 0, 0, now.Location())
+		lobby.EstimatedStartTime = ets
 	}
-	revel.INFO.Println("EstimatedStartTime", ets)
+	revel.INFO.Println("EstimatedStartTime", lobby.EstimatedStartTime)
 	if c.Validation.HasErrors() {
 		revel.INFO.Println("errors detected")
 		revel.INFO.Println(c.Validation.Errors)
@@ -391,6 +416,8 @@ func (c LobbyController) DoCreate(lobby models.Lobby) revel.Result {
 	lobby.State = "open"
 	lobby.Owner = user
 	c.SaveLobby(&lobby)
+	user.Lobby = &lobby
+	c.SaveUser(user)
 
 	return c.Redirect(App.Index)
 }

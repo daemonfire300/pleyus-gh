@@ -4,6 +4,7 @@
   <div class="row">
     <h1>{{ .lobby.Title }} ({{ .lobby.State }}d)</h1>
     <h2>Level ({{ .lobby.SkillLevel }})</h2>
+    <span>Starts in about {{ .startsInMinutes }} minute(s)</span>
   </div>
   <div class="row">
     {{ if eq .authUser.LobbyId .lobby.Id }}
@@ -22,6 +23,15 @@
     </div>
     {{ end }}
     {{ end }}
+    <div>
+    {{ if .meta }}
+      <p>{{ .meta.Description }}</p>
+      <p>{{ .meta.Server }}</p>
+      <p>{{ .meta.VoiceServerType }}: {{ .meta.VoiceServer }}</p>
+    {{ else }}
+      <p>No details available</p>
+    {{ end }}
+  </div>
     {{ if eq .authUser.Id .lobby.OwnerId }}
     <div>
       <a href="{{url "LobbyController.State" .lobby.Id "close"}}">Close</a> |

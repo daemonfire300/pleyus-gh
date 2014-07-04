@@ -138,3 +138,19 @@ func (l *Lobby) GetPlayers(txn *gorp.Transaction) {
 		}
 	}
 }
+
+func (l *Lobby) GetMeta(txn *gorp.Transaction) (*LobbyMeta, error) {
+	var m LobbyMeta
+	err := txn.SelectOne(&m, "SELECT * FROM lobbymeta WHERE lobbyid = $1", l.Id)
+	if err != nil && err != sql.ErrNoRows {
+		revel.ERROR.Println(err)
+		panic(err)
+	}
+	if err != nil {
+		revel.INFO.Println(err)
+		return nil, err
+	} else {
+		m.Lobby = l
+		return &m, err
+	}
+}
