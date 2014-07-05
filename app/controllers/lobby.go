@@ -224,7 +224,7 @@ func (c LobbyController) EndLobby(lobbyid int64) revel.Result {
 	return c.Redirect("/lobby/view/%d", lobbyid)
 }
 
-func (c LobbyController) PostEditMeta(lobbyid int64, meta models.LobbyMeta) revel.Result {
+func (c LobbyController) EditMeta(lobbyid int64, m models.LobbyMeta) revel.Result {
 	user, err := c.getUser()
 	if err != nil {
 		return c.Redirect(UserController.Login)
@@ -233,9 +233,23 @@ func (c LobbyController) PostEditMeta(lobbyid int64, meta models.LobbyMeta) reve
 		return c.Redirect("/lobby/view/%d", lobbyid)
 	}
 
-	c.SaveLobbyMeta(m)
+	c.SaveLobbyMeta(&m)
 
-	return c.Redirect(App.Index)
+	return c.Render(lobbyid, m)
+}
+
+func (c LobbyController) PostEditMeta(lobbyid int64, m models.LobbyMeta) revel.Result {
+	user, err := c.getUser()
+	if err != nil {
+		return c.Redirect(UserController.Login)
+	}
+	if c.isLobbyOwnerFlash(user, lobbyid) {
+		return c.Redirect("/lobby/view/%d", lobbyid)
+	}
+
+	c.SaveLobbyMeta(&m)
+
+	return c.Render(lobbyid, m)
 }
 
 func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
