@@ -27,7 +27,6 @@ func initDB() {
 		revel.INFO.Println("Connected to the database")
 	}
 	Dbm = &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
-	testSetupTables()
 }
 
 func setupTables() {
@@ -65,6 +64,7 @@ func createTestUser() *models.User {
 		Email:    "test@accountr.eu",
 		Password: "stronk_hidden_password",
 	}
+	return u
 }
 
 func (t *AppTest) Before() {
@@ -81,7 +81,7 @@ func (t *AppTest) TestRegisterUser() {
 	d.Add("user.Password", u.Password)
 	t.PostForm("/register", d)
 	t.AssertStatus(200)
-	t.AssertContentType("text/html")
+	t.AssertOk()
 }
 
 func (t *AppTest) After() {
