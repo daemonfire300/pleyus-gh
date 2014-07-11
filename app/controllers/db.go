@@ -21,7 +21,9 @@ type DatabaseController struct {
 
 func InitDB() {
 	var err error
-	db, err = sql.Open("postgres", "user=postgres dbname=pleyus password=abc sslmode=disable")
+	var dbSpec string
+	dbSpec = revel.Config.StringDefault("db.spec", "user=postgres dbname=pleyus password=abc sslmode=disable")
+	db, err = sql.Open("postgres", dbSpec)
 	if err != nil {
 		revel.ERROR.Fatal("Could not establish database connection")
 	} else {
