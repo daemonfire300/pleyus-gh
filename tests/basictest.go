@@ -79,7 +79,7 @@ func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 	if err != nil {
 		panic(err)
 	}
-	err = txn.SelectOne(u, "SELECT * FROM user WHERE username = $1 AND email = $2", u.Username, u.Email)
+	err = txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
 	if err != nil {
 		fmt.Println(err)
 		return false
