@@ -3,6 +3,7 @@ package tests
 import (
 	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
 	"database/sql"
+	"fmt"
 	"github.com/coopernurse/gorp"
 	_ "github.com/lib/pq"
 	"github.com/revel/revel"
@@ -80,6 +81,7 @@ func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 	}
 	err = txn.SelectOne(u, "SELECT * FROM user WHERE username = $1 AND email = $2", u.Username, u.Email)
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 	return true
