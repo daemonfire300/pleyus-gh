@@ -81,9 +81,11 @@ func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 	}
 	err = txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
 	if err != nil {
+		txn.Rollback()
 		fmt.Println(err)
 		return false
 	}
+	txn.Commit()
 	return true
 }
 
