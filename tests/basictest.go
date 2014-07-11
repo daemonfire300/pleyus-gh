@@ -73,6 +73,18 @@ func (t *AppTest) Before() {
 	setupTables()
 }
 
+func (t *AppTest) userShouldBeCreated(u *models.User) bool {
+	txn, err := Dbm.Begin()
+	if err != nil {
+		panic(err)
+	}
+	err = txn.SelectOne(u, "SELECT * FROM user WHERE username = $1 AND email = $2", u.Username, u.Email)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func (t *AppTest) TestRegisterUser() {
 	u := createTestUser()
 	d := url.Values{}
@@ -82,6 +94,7 @@ func (t *AppTest) TestRegisterUser() {
 	t.PostForm("/register", d)
 	t.AssertStatus(200)
 	t.AssertOk()
+	t.Assert(t.userShouldBeCreated(u))
 }
 
 func (t *AppTest) After() {
