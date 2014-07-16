@@ -87,6 +87,8 @@ func (l *Lobby) PreInsert(_ gorp.SqlExecutor) error {
 	if l.Game != nil {
 		l.GameId = l.Game.Id
 	}
+	l.Updated = time.Now()
+	l.Created = time.Now()
 	return nil
 }
 
@@ -97,6 +99,7 @@ func (l *Lobby) PreUpdate(_ gorp.SqlExecutor) error {
 	if l.Game != nil {
 		l.GameId = l.Game.Id
 	}
+	l.Updated = time.Now()
 	return nil
 }
 

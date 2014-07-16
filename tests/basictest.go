@@ -7,6 +7,8 @@ import (
 	"github.com/coopernurse/gorp"
 	_ "github.com/lib/pq"
 	"github.com/revel/revel"
+	//"net/http"
+	"net/http/cookiejar"
 	"net/url"
 )
 
@@ -17,6 +19,7 @@ var (
 
 type AppTest struct {
 	revel.TestSuite
+	txn *gorp.Transaction
 }
 
 func initDB() {
@@ -68,24 +71,72 @@ func createTestUser() *models.User {
 	return u
 }
 
+func createTestLobby() *models.Lobby {
+	l := &models.Lobby{
+		Title:             "TestLobbyA",
+		Access:            "private",
+		SkillLevel:        128,
+		EstimatedPlayTime: 60,
+		MaxUsers:          32,
+	}
+	return l
+}
+
+func createTestGames() []*models.Game {
+	games := []*models.Game{
+		&models.Game{
+			Name:  "Game A",
+			Genre: "FPS",
+		},
+		&models.Game{
+			Name:  "Game B",
+			Genre: "Action RPG",
+		},
+		&models.Game{
+			Name:  "Game C",
+			Genre: "RPG",
+		},
+		&models.Game{
+			Name:  "Game D",
+			Genre: "MMO",
+		},
+		&models.Game{
+			Name:  "Game E",
+			Genre: "MMO",
+		},
+	}
+	return games
+}
+
 func (t *AppTest) Before() {
 	println("Set up")
 	initDB()
 	setupTables()
-}
-
-func (t *AppTest) userShouldBeCreated(u *models.User) bool {
-	txn, err := Dbm.Begin()
+	var err error
+	t.txn, err = Dbm.Begin()
 	if err != nil {
+		fmt.Println("panic A")
 		panic(err)
 	}
-	err = txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
+}
+
+func (t *AppTest) lobbyShouldBeCreated(l *models.Lobby) bool {
+	err := t.txn.SelectOne(l, "SELECT * FROM lobby WHERE title = $1", l.Title)
 	if err != nil {
-		txn.Rollback()
+		t.txn.Rollback()
 		fmt.Println(err)
 		return false
 	}
-	txn.Commit()
+	return true
+}
+
+func (t *AppTest) userShouldBeCreated(u *models.User) bool {
+	err := t.txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
+	if err != nil {
+		t.txn.Rollback()
+		fmt.Println(err)
+		return false
+	}
 	return true
 }
 
@@ -101,7 +152,58 @@ func (t *AppTest) TestRegisterUser() {
 	t.Assert(t.userShouldBeCreated(u))
 }
 
+func (t *AppTest) TestCreateLobby() {
+	u := createTestUser()
+	err := t.txn.Insert(u)
+	if err != nil {
+		t.txn.Rollback()
+		panic(err)
+		fmt.Println("panic B")
+	}
+	gs := createTestGames()
+	for _, g := range gs {
+		err = t.txn.Insert(g)
+		if err != nil {
+			t.txn.Rollback()
+			panic(err)
+			fmt.Println("panic C")
+		}
+	}
+	d := url.Values{}
+	d.Add("user.Username", u.Username)
+	d.Add("user.Password", u.Password)
+	j, _ := cookiejar.New(nil)
+	t.Client.Jar = j
+	fmt.Println("jar error ", err)
+	resp, err := t.Client.PostForm("http://localhost:9000/login", d)
+	fmt.Println("/login err: ", err)
+	resp.Body.Close()
+
+	//fmt.Println("\n\n++++++++COOKIES+++++++", t.Client.Jar, "\n\n")
+	//t.Client.Jar.SetCookies(ur, resp.Cookies())
+	//fmt.Println("++++++++JAR+++++++", t.Client.Jar)
+	if err != nil {
+		fmt.Println(err)
+		t.Assert(false)
+	}
+	l := createTestLobby()
+	d = url.Values{}
+	d.Add("lobby.GameId", "1")
+	d.Add("lobby.Title", l.Title)
+	d.Add("lobby.Access", "public")
+	d.Add("lobby.SkillLevel", "128")
+	d.Add("lobby.MaxUsers", "32")
+	d.Add("lobby.EstimatedPlayTime", "45")
+	d.Add("lobby.EstimatedStartTime", "18:32")
+	resp, err = t.Client.PostForm("http://localhost:9000/lobby/create", d)
+	resp.Body.Close()
+	t.Assert(t.lobbyShouldBeCreated(l))
+	t.AssertOk()
+	t.AssertStatus(200)
+}
+
 func (t *AppTest) After() {
 	println("Tear down")
+	t.txn.Commit()
 	tearDown()
 }
