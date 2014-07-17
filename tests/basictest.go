@@ -211,12 +211,6 @@ func (t *AppTest) TestCreateLobby() {
 		t.Assert(false)
 	}
 	l := createTestLobby()
-	var g *models.Game
-	err = t.txn.SelectOne(g, "SELECT * FROM games WHERE id >= $1 LIMIT 1", 1)
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
 	d = url.Values{}
 	d.Add("lobby.GameId", "3")
 	d.Add("lobby.Title", l.Title)
