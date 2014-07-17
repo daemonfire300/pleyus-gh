@@ -85,7 +85,9 @@ func (c UserController) Login(username string, password string) revel.Result {
 func (c UserController) DoLogin(username string, password string) revel.Result {
 	user, err := c.GetUserByName(username)
 	if err != nil {
+		// user does not exist (or other error)
 		revel.INFO.Println(err)
+		return c.Redirect("/login?notfound")
 	}
 	user.ValidatePassword(c.Validation, password)
 	if c.Validation.HasErrors() {

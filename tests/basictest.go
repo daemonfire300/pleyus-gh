@@ -10,11 +10,13 @@ import (
 	//"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strconv"
 )
 
 var (
 	Dbm *gorp.DbMap
 	db  *sql.DB
+	r   int
 )
 
 type AppTest struct {
@@ -63,17 +65,19 @@ func tearDown() {
 }
 
 func createTestUser() *models.User {
+	r++
 	u := &models.User{
-		Username: "TestUserA",
-		Email:    "test@accountr.eu",
+		Username: "TestUserA" + strconv.Itoa(r),
+		Email:    "no" + strconv.Itoa(r) + "test@accountr.eu",
 		Password: "stronk_hidden_password",
 	}
 	return u
 }
 
 func createTestLobby() *models.Lobby {
+	r++
 	l := &models.Lobby{
-		Title:             "TestLobbyA",
+		Title:             "TestLobbyA" + strconv.Itoa(r),
 		Access:            "private",
 		SkillLevel:        128,
 		EstimatedPlayTime: 60,
@@ -121,7 +125,7 @@ func (t *AppTest) Before() {
 }
 
 func (t *AppTest) lobbyShouldBeCreated(l *models.Lobby) bool {
-	err := t.txn.SelectOne(l, "SELECT * FROM lobby WHERE title = $1", l.Title)
+	err := t.txn.SelectOne(l, "SELECT * FROM lobbys WHERE title = $1", l.Title)
 	if err != nil {
 		t.txn.Rollback()
 		fmt.Println(err)
@@ -154,11 +158,23 @@ func (t *AppTest) TestRegisterUser() {
 
 func (t *AppTest) TestCreateLobby() {
 	u := createTestUser()
+	pp := u.Password // save plain-text password for later use --> http post
+	u.HashPassword() // hash password before insert
 	err := t.txn.Insert(u)
 	if err != nil {
 		t.txn.Rollback()
 		panic(err)
 		fmt.Println("panic B")
+	}
+	err = t.txn.Commit()
+	if err != nil {
+		fmt.Println("panic K")
+		panic(err)
+	}
+	t.txn, err = Dbm.Begin()
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
 	}
 	gs := createTestGames()
 	for _, g := range gs {
@@ -170,11 +186,19 @@ func (t *AppTest) TestCreateLobby() {
 		}
 	}
 	d := url.Values{}
-	d.Add("user.Username", u.Username)
-	d.Add("user.Password", u.Password)
+	t.txn.Commit()
+	t.txn, err = Dbm.Begin()
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	d.Add("username", u.Username)
+	d.Add("password", pp)
 	j, _ := cookiejar.New(nil)
 	t.Client.Jar = j
 	fmt.Println("jar error ", err)
+	fmt.Println("user should be created: ", t.userShouldBeCreated(u))
+	t.Assert(t.userShouldBeCreated(u))
 	resp, err := t.Client.PostForm("http://localhost:9000/login", d)
 	fmt.Println("/login err: ", err)
 	resp.Body.Close()
@@ -187,8 +211,14 @@ func (t *AppTest) TestCreateLobby() {
 		t.Assert(false)
 	}
 	l := createTestLobby()
+	var g *models.Game
+	err = t.txn.SelectOne(g, "SELECT * FROM games WHERE id >= $1 LIMIT 1", 1)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
 	d = url.Values{}
-	d.Add("lobby.GameId", "1")
+	d.Add("lobby.GameId", "3")
 	d.Add("lobby.Title", l.Title)
 	d.Add("lobby.Access", "public")
 	d.Add("lobby.SkillLevel", "128")
