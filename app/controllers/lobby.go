@@ -232,22 +232,27 @@ func (c LobbyController) EditMeta(lobbyid int64, m models.LobbyMeta) revel.Resul
 	if c.isLobbyOwnerFlash(user, lobbyid) {
 		return c.Redirect("/lobby/view/%d", lobbyid)
 	}
-
-	c.SaveLobbyMeta(&m)
-
-	return c.Render(lobbyid, m)
-}
-
-func (c LobbyController) PostEditMeta(lobbyid int64, m models.LobbyMeta) revel.Result {
-	user, err := c.getUser()
+	l, err := c.GetLobbyById(lobbyid)
 	if err != nil {
-		return c.Redirect(UserController.Login)
+		revel.INFO.Println(err)
+		c.Flash.Error("Lobby not found")
+		return c.Redirect(App.Index)
 	}
-	if c.isLobbyOwnerFlash(user, lobbyid) {
-		return c.Redirect("/lobby/view/%d", lobbyid)
+	// find any existing meta linked to the lobby
+	if c.Request.Method == "POST" {
+		c.SaveLobbyMeta(&m)
+	} else {
+		mt, err := l.GetMeta(c.Txn)
+		if err != sql.ErrNoRows {
+			m = models.LobbyMeta{}
+		} else {
+			m = *mt
+		}
+		if err != nil && err != sql.ErrNoRows {
+			revel.INFO.Println(err)
+			return c.Redirect(App.Index)
+		}
 	}
-
-	c.SaveLobbyMeta(&m)
 
 	return c.Render(lobbyid, m)
 }

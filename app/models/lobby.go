@@ -35,6 +35,7 @@ type LobbyMeta struct {
 	Lobby           *Lobby
 	Description     string
 	Server          string
+	ServerType      string
 	VoiceServer     string
 	VoiceServerType string
 }
