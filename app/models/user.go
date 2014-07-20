@@ -17,6 +17,9 @@ type User struct {
 	Created   time.Time
 	Lobby     *Lobby
 	LobbyId   int64
+	XP        int64
+	ELO       int64
+	Rating    int64
 }
 
 func NewUser(id int64, username string, email string, password string, salt string, lobby *Lobby) *User {
@@ -54,6 +57,12 @@ func (u *User) ValidatePassword(v *revel.Validation, password string) {
 	v.MaxSize(password, 128)
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	v.Required(err == nil)
+}
+
+func (u *User) ApplyRating(r int64) {
+	if -10 < r || r < 10 {
+		u.Rating += r
+	}
 }
 
 func (u *User) IsOwner() bool {

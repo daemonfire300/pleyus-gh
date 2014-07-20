@@ -1,7 +1,7 @@
 {{set . "title" "Login"}}
 {{template "header.html" .}}
 
-<h1>Register:</h1>
+<h1>Login:</h1>
 
 <form action="{{url "UserController.Login"}}" method="POST">
   {{with $field := field "username" .}}

@@ -40,13 +40,15 @@ func (c LobbyController) List(game string, title string) revel.Result {
 		// CREATE EXTENSION pg_trgm; --> http://www.rdegges.com/easy-fuzzy-text-searching-with-postgresql/
 	}
 	if len(queryParts) > 0 {
-		searchQuery += " WHERE "
+		searchQuery += " AND "
 		searchQuery += strings.Join(queryParts, " AND ")
 		revel.INFO.Println("Using search parameters", game, title, " generated query ", searchQuery)
 	}
-	results, err := c.Txn.Select(models.Lobby{}, "SELECT * FROM lobbys "+searchQuery, map[string]interface{}{
+	results, err := c.Txn.Select(models.Lobby{}, "SELECT * FROM lobbys WHERE access <> :access AND state = :state "+searchQuery, map[string]interface{}{
 		"gameid": gameid,
 		"title":  title,
+		"access": "private",
+		"state":  "open",
 	})
 	revel.INFO.Println("gameid", gameid)
 	revel.INFO.Println("title", title)
@@ -161,7 +163,7 @@ func (c LobbyController) startLobby(lobby *models.Lobby) {
 	c.DatabaseController.Rollback()
 }
 
-func (c LobbyController) StartLobby(lobbyid int64) revel.Result {
+func (c LobbyController) StartOrEndLobby(lobbyid int64, a string) revel.Result {
 	user, err := c.getUser()
 	if err != nil {
 		return c.Redirect(UserController.Login)
@@ -180,24 +182,36 @@ func (c LobbyController) StartLobby(lobbyid int64) revel.Result {
 		return c.Redirect(App.Index)
 	}
 
-	if lobby.State == "done" || lobby.State == "started" {
-		c.Flash.Success("Lobby already done or started")
-		return c.Redirect("/lobby/view/%d", lobbyid)
-	}
+	if a == "start" {
+		if lobby.State == "done" || lobby.State == "started" {
+			c.Flash.Success("Lobby already done or started")
+			return c.Redirect("/lobby/view/%d", lobbyid)
+		}
+		lobby.State = "starting"
+	} else {
+		if lobby.State != "started" {
+			c.Flash.Success("Lobby already done or has not been started")
+			return c.Redirect("/lobby/rate/%d", lobbyid)
+		}
+		/*if lobby.State == "done"{
+			c.Flash.Success("Lobby already done or started")
+			return c.Redirect("/lobby/view/%d", lobbyid)
+		}*/
 
-	lobby.State = "starting"
+		lobby.State = "done"
+	}
 	c.UpdateLobby(lobby)
-	go c.startLobby(lobby)
+	if a == "start" {
+		go c.startLobby(lobby)
+	}
 	return c.Redirect("/lobby/view/%d", lobbyid)
 }
 
-func (c LobbyController) EndLobby(lobbyid int64) revel.Result {
+// rs : ratings
+func (c LobbyController) RateLobby(lobbyid int64, rs map[int64]int64) revel.Result {
 	user, err := c.getUser()
 	if err != nil {
 		return c.Redirect(UserController.Login)
-	}
-	if !c.isLobbyOwnerFlash(user, lobbyid) {
-		return c.Redirect("/lobby/view/%d", lobbyid)
 	}
 	var lobby *models.Lobby
 	lobby, err = c.GetLobbyById(lobbyid)
@@ -209,19 +223,38 @@ func (c LobbyController) EndLobby(lobbyid int64) revel.Result {
 		c.Flash.Error("Lobby not found")
 		return c.Redirect(App.Index)
 	}
-
-	if lobby.State != "started" {
-		c.Flash.Success("Lobby already done or has not been started")
+	// only rate lobby which has been started --> then --> ended
+	if !lobby.Ended() {
+		c.Flash.Error("Lobby still ongoing")
 		return c.Redirect("/lobby/view/%d", lobbyid)
 	}
-	/*if lobby.State == "done"{
-		c.Flash.Success("Lobby already done or started")
-		return c.Redirect("/lobby/view/%d", lobbyid)
-	}*/
-
-	lobby.State = "done"
-	c.UpdateLobby(lobby)
-	return c.Redirect("/lobby/view/%d", lobbyid)
+	// check if user is actually participating in the lobby
+	if !lobby.HasPlayer(c.Txn, user) {
+		c.Flash.Error("Not part of this lobby")
+		return c.Redirect(App.Index)
+	}
+	lobby.GetPlayers(c.Txn)
+	ps := lobby.Players
+	// method == GET	: Display other participants and general lobby rating functionality
+	if c.Request.Method == "GET" {
+		return c.Render(lobbyid, ps)
+	}
+	// method == POST	: Get ratings and apply them
+	var pl []models.User
+	for k, v := range rs {
+		p, ok := ps[k]
+		if !ok {
+			continue
+		}
+		p.ApplyRating(v)
+		pl = append(pl, *p)
+	}
+	err = c.Txn.Insert(&pl)
+	if err != nil {
+		revel.INFO.Println(err)
+		return c.Redirect("/lobby/rate/%d", lobbyid)
+	}
+	return c.Redirect(App.Index)
 }
 
 func (c LobbyController) EditMeta(lobbyid int64, m models.LobbyMeta) revel.Result {

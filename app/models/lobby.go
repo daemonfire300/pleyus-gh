@@ -25,7 +25,7 @@ type Lobby struct {
 	EstimatedStartTime time.Time
 	OwnerId            int64
 	GameId             int64
-	Players            []*User
+	Players            map[int64]*User
 	Rating             int
 }
 
@@ -71,6 +71,14 @@ func (l *Lobby) ValidatePassword(v *revel.Validation, password string) {
 
 func (l *Lobby) IsFull() bool {
 	return (len(l.Players)+1 > l.MaxUsers)
+}
+
+func (l *Lobby) Started() bool {
+	return l.State == "started"
+}
+
+func (l *Lobby) Ended() bool {
+	return l.State == "done"
 }
 
 func (lobby *Lobby) Validate(v *revel.Validation) {
@@ -132,15 +140,26 @@ func (l *Lobby) PostGet(exe gorp.SqlExecutor) error {
 
 func (l *Lobby) GetPlayers(txn *gorp.Transaction) {
 	plrs, err := txn.Select(User{}, "SELECT * FROM users WHERE lobbyid = $1", l.Id)
+	l.Players = make(map[int64]*User)
 	if err != nil {
 		revel.INFO.Println(err)
-		l.Players = []*User{}
 	} else {
 		for _, r := range plrs {
 			plr := r.(*User)
-			l.Players = append(l.Players, plr)
+			l.Players[plr.Id] = plr
 		}
 	}
+}
+
+// NOTE: This method IS NOT state-sensitive, this means, if the lobby has been closed all players
+// have been rated etc, this will still return true if the lobby has not been cleared yet.
+// NOTE: This method DOES NOT check if the lobby exists.
+func (l *Lobby) HasPlayer(txn *gorp.Transaction, p *User) bool {
+	h, err := txn.SelectInt("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND lobbyid = $2)", p.Id, l.Id)
+	if err != nil {
+		revel.INFO.Println(err)
+	}
+	return (h > 0)
 }
 
 func (l *Lobby) GetMeta(txn *gorp.Transaction) (*LobbyMeta, error) {
