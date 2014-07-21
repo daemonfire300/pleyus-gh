@@ -194,19 +194,10 @@ func (t *AppTest) TestCreateLobby() {
 	}
 	d.Add("username", u.Username)
 	d.Add("password", pp)
-	//j, _ := cookiejar.New(nil)
-	//t.Client.Jar = j
-	//fmt.Println("jar error ", err)
-	fmt.Println("user should be created: ", t.userShouldBeCreated(u))
+	fmt.Println("user should be created")
 	t.Assert(t.userShouldBeCreated(u))
 	t.PostForm("/login", d)
-	//resp, err := t.Client.PostForm("http://localhost:9000/login", d)
-	//fmt.Println("/login err: ", err)
-	//resp.Body.Close()
-
-	//fmt.Println("\n\n++++++++COOKIES+++++++", t.Client.Jar, "\n\n")
-	//t.Client.Jar.SetCookies(ur, resp.Cookies())
-	//fmt.Println("++++++++JAR+++++++", t.Client.Jar)
+	t.AssertOk()
 	if err != nil {
 		fmt.Println(err)
 		t.Assert(false)
@@ -220,8 +211,6 @@ func (t *AppTest) TestCreateLobby() {
 	d.Add("lobby.MaxUsers", "32")
 	d.Add("lobby.EstimatedPlayTime", "45")
 	d.Add("lobby.EstimatedStartTime", "18:32")
-	//resp, err = t.Client.PostForm("http://localhost:9000/lobby/create", d)
-	//resp.Body.Close()
 	t.PostForm("/lobby/create", d)
 	t.Assert(t.lobbyShouldBeCreated(l))
 	fmt.Println(l)
