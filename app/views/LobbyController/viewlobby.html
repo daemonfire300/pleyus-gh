@@ -34,9 +34,13 @@
   </div>
     {{ if eq .authUser.Id .lobby.OwnerId }}
     <div>
-      <a href="{{url "LobbyController.State" .lobby.Id "close"}}">Close</a> |
-      <a href="{{url "LobbyController.State" .lobby.Id "open"}}">Open</a> ||
-      <a href="{{url "LobbyController.StartLobby" .lobby.Id }}">Start</a> 
+      {{ if eq .lobby.State "started" }}
+      <a href="{{url "LobbyController.StartOrEndLobby" .lobby.Id "end"}}">End</a>
+      {{ else }}
+      <a href="{{url "LobbyController.State" .lobby.Id "close"}}">Close</a> -
+      <a href="{{url "LobbyController.State" .lobby.Id "open"}}">Open</a> -
+      <a href="{{url "LobbyController.StartOrEndLobby" .lobby.Id "start"}}">Start</a> 
+      {{ end}}
     </div>
     {{ end }}
     {{ if .canViewLobby }}
@@ -44,11 +48,12 @@
       <span>Players</span>
     </div>
     <hr />
-    <table class=".table">
+    <table class="table table-striped">
     <thead>
       <tr>
         <th>Name</th>
         <th>Badges</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -56,7 +61,7 @@
     {{ $lobby := .lobby }}
     {{ range .lobby.Players }}
     <tr>
-      <td><a href="{{url "UserController.ViewProfile" .Id}}">{{ .Username }}</a></td>
+      <td><small class="bg-info text-uppercase">{{ if eq .Id $lobby.OwnerId }}admin{{ end }}</small> <small>R{{ .Rating }}</small> <a href="{{url "UserController.ViewProfile" .Id}}">{{ .Username }}</a></td>
       <td>Badges</td>
       <td><a href="{{url "LobbyController.KickPlayer" $lobby.Id .Id}}">Kick</a></td>
     </tr>

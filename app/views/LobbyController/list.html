@@ -8,19 +8,20 @@
         <input type="submit" value="Search" />
       </form>
     </div>
-    <table class=".table">
+    <table class="table table-striped">
     <thead>
       <tr>
         <th>Name</th>
         <th>Game</th>
         <th>Skill Level</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
     {{ if .lobbys}}
     {{ range .lobbys }}
     <tr>
-      <td><span>{{ .Title }}</span></td>
+      <td><strong>{{ .Title }}</strong></td>
       <td>{{ .Game.Name }}</td>
       <td>{{ .SkillLevel }}</td>
       {{ $id := .Id}}
