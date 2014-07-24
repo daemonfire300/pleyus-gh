@@ -64,6 +64,24 @@ func tearDown() {
 	Dbm.DropTablesIfExists()
 }
 
+func resetTxn(txn *gorp.Transaction, inErr error) {
+	if inErr != nil {
+		txn.Rollback()
+	} else {
+		err := txn.Commit()
+		if err != nil {
+			fmt.Println(err)
+			panic(err)
+		} else {
+			txn, err = Dbm.Begin()
+			if err != nil {
+				fmt.Println(err)
+				panic(err)
+			}
+		}
+	}
+}
+
 func createTestUser() *models.User {
 	r++
 	u := &models.User{
@@ -72,6 +90,14 @@ func createTestUser() *models.User {
 		Password: "stronk_hidden_password",
 	}
 	return u
+}
+
+func insertTestUser(txn *gorp.Transaction) (*models.User, string, error) {
+	u := createTestUser()
+	p := u.Password
+	u.HashPassword()
+	err := txn.Insert(u)
+	return u, p, err
 }
 
 func createTestLobby() *models.Lobby {
@@ -84,6 +110,14 @@ func createTestLobby() *models.Lobby {
 		MaxUsers:          32,
 	}
 	return l
+}
+
+func insertTestLobby(txn *gorp.Transaction, o *models.User) (*models.Lobby, error) {
+	l := createTestLobby()
+	l.Owner = o
+	l.GameId = 3
+	err := txn.Insert(l)
+	return l, err
 }
 
 func createTestGames() []*models.Game {
@@ -110,6 +144,18 @@ func createTestGames() []*models.Game {
 		},
 	}
 	return games
+}
+
+func insertTestGames(txn *gorp.Transaction) error {
+	gs := createTestGames()
+	for _, g := range gs {
+		err = t.txn.Insert(g)
+		if err != nil {
+			fmt.Println("panic C")
+			fmt.Println(err)
+			return err
+		}
+	}
 }
 
 func (t *AppTest) Before() {
@@ -154,6 +200,28 @@ func (t *AppTest) TestRegisterUser() {
 	t.AssertStatus(200)
 	t.AssertOk()
 	t.Assert(t.userShouldBeCreated(u))
+}
+
+func (t *AppTest) TestStartAndEndAndRateLobby() {
+	u, pp, err := insertTestUser(t.txn)
+	resetTxn(t.txn, err)
+	d := url.Values{}
+	d.Add("username", u.Username)
+	d.Add("password", pp)
+	fmt.Println("user should be created")
+	t.Assert(t.userShouldBeCreated(u))
+	t.PostForm("/login", d)
+	t.AssertOk()
+	l, err := insertTestLobby(txn, u)
+	resetTxn(t.txn, err)
+	t.Assert(t.lobbyShouldBeCreated(l))
+	fmt.Println(l)
+	t.Get(fmt.Sprintf("/lobby/switch/%d/start", l.Id)) // TODO: Use fmt.Sprintf
+	t.AssertOk()
+	t.AssertStatus(200)
+	t.Get(fmt.Sprintf("/lobby/switch/%d/end", l.Id)) // TODO: Use fmt.Sprintf
+	t.AssertOk()
+
 }
 
 func (t *AppTest) TestCreateLobby() {
