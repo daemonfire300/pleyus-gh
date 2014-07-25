@@ -66,6 +66,7 @@ func tearDown() {
 
 func resetTxn(txn *gorp.Transaction, inErr error) {
 	if inErr != nil {
+		fmt.Println("rollback .... ", inErr)
 		txn.Rollback()
 	} else {
 		err := txn.Commit()
@@ -148,14 +149,16 @@ func createTestGames() []*models.Game {
 
 func insertTestGames(txn *gorp.Transaction) error {
 	gs := createTestGames()
+	var err error
 	for _, g := range gs {
-		err = t.txn.Insert(g)
+		err = txn.Insert(g)
 		if err != nil {
 			fmt.Println("panic C")
 			fmt.Println(err)
 			return err
 		}
 	}
+	return nil
 }
 
 func (t *AppTest) Before() {
@@ -204,6 +207,10 @@ func (t *AppTest) TestRegisterUser() {
 
 func (t *AppTest) TestStartAndEndAndRateLobby() {
 	u, pp, err := insertTestUser(t.txn)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
 	resetTxn(t.txn, err)
 	d := url.Values{}
 	d.Add("username", u.Username)
@@ -212,7 +219,17 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	t.Assert(t.userShouldBeCreated(u))
 	t.PostForm("/login", d)
 	t.AssertOk()
-	l, err := insertTestLobby(txn, u)
+	err = insertTestGames(t.txn)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	resetTxn(t.txn, err)
+	l, err := insertTestLobby(t.txn, u)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
 	resetTxn(t.txn, err)
 	t.Assert(t.lobbyShouldBeCreated(l))
 	fmt.Println(l)
@@ -221,7 +238,6 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	t.AssertStatus(200)
 	t.Get(fmt.Sprintf("/lobby/switch/%d/end", l.Id)) // TODO: Use fmt.Sprintf
 	t.AssertOk()
-
 }
 
 func (t *AppTest) TestCreateLobby() {
