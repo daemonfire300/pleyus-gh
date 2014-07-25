@@ -208,7 +208,9 @@ func (c LobbyController) StartOrEndLobby(lobbyid int64, a string) revel.Result {
 }
 
 // rs : ratings
-func (c LobbyController) RateLobby(lobbyid int64, rs map[int64]int64) revel.Result {
+func (c LobbyController) Rate(lobbyid int64) revel.Result {
+	var rs map[int64]int64
+	c.Params.Bind(&rs, "rs")
 	user, err := c.getUser()
 	if err != nil {
 		return c.Redirect(UserController.Login)
@@ -243,7 +245,7 @@ func (c LobbyController) RateLobby(lobbyid int64, rs map[int64]int64) revel.Resu
 	var pl []models.User
 	for k, v := range rs {
 		p, ok := ps[k]
-		if !ok {
+		if !ok || k == user.Id {
 			continue
 		}
 		p.ApplyRating(v)

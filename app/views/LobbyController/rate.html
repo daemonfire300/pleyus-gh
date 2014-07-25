@@ -1,0 +1,51 @@
+{{set . "title" "View Lobby"}}
+{{template "header.html" .}}
+<div class="container">
+  <div class="row">
+    <h1>Rate this lobby</h1>
+  </div>
+  <div class="row">
+    <div>
+      <span>Players</span>
+    </div>
+    <hr />
+    <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Rating</th>
+      </tr>
+    </thead>
+    <tbody>
+    {{ if .ps}}
+    {{ $me :=  .authUser }}
+    {{ range .ps }}
+    <tr>
+      <td><small class="bg-info text-uppercase">{{ if eq $me.Id .Id }}YOU{{ end }}</small> <small>R{{ .Rating }}</small> <a href="{{url "UserController.ViewProfile" .Id}}">{{ .Username }}</a></td>
+      <td>
+      	<select name="rs[{{ .Id }}]">
+      		<option value="0" name="0"/>
+      		<option value="1" name="1"/>
+      		<option value="2" name="2"/>
+      		<option value="3" name="3"/>
+      		<option value="4" name="4"/>
+      		<option value="5" name="5"/>
+      		<option value="6" name="6"/>
+      	</select>
+		</td>
+    </tr>
+    {{ end }}
+    {{ end }}
+  </tbody>
+  </table>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+    <div class="span6">
+      {{template "flash.html" .}}
+    </div>
+  </div>
+</div>
+
+{{template "footer.html" .}}

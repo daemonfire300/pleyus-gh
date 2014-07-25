@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/coopernurse/gorp"
 	"github.com/revel/revel"
+	"strconv"
 	"time"
 )
 
@@ -154,12 +155,13 @@ func (l *Lobby) GetPlayers(txn *gorp.Transaction) {
 // NOTE: This method IS NOT state-sensitive, this means, if the lobby has been closed all players
 // have been rated etc, this will still return true if the lobby has not been cleared yet.
 // NOTE: This method DOES NOT check if the lobby exists.
-func (l *Lobby) HasPlayer(txn *gorp.Transaction, p *User) bool {
-	h, err := txn.SelectInt("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND lobbyid = $2)", p.Id, l.Id)
+func (l *Lobby) HasPlayer(txn *gorp.Transaction, p *User) (r bool) {
+	h, err := txn.SelectStr("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND lobbyid = $2)", p.Id, l.Id)
 	if err != nil {
 		revel.INFO.Println(err)
 	}
-	return (h > 0)
+	r, _ = strconv.ParseBool(h)
+	return
 }
 
 func (l *Lobby) GetMeta(txn *gorp.Transaction) (*LobbyMeta, error) {

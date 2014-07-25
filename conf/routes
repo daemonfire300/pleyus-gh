@@ -16,6 +16,7 @@ GET		/lobby/list								LobbyController.List
 GET		/lobby/list/:game						LobbyController.List
 GET		/lobby/list/:game/:title				LobbyController.List
 GET		/lobby/join/:lobbyid					LobbyController.Join
+*		/lobby/rate/:lobbyid					LobbyController.Rate
 GET		/lobby/switch/:lobbyid/:a				LobbyController.StartOrEndLobby
 GET		/lobby/kick/:lobbyid/:userid			LobbyController.KickPlayer
 GET		/lobby/invite/:userid					LobbyController.InvitePlayer
