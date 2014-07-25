@@ -176,8 +176,8 @@ func (t *AppTest) Before() {
 func (t *AppTest) lobbyShouldBeCreated(l *models.Lobby) bool {
 	err := t.txn.SelectOne(l, "SELECT * FROM lobbys WHERE title = $1", l.Title)
 	if err != nil {
-		t.txn.Rollback()
 		fmt.Println(err)
+		t.txn.Rollback()
 		return false
 	}
 	return true
@@ -186,8 +186,8 @@ func (t *AppTest) lobbyShouldBeCreated(l *models.Lobby) bool {
 func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 	err := t.txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
 	if err != nil {
-		t.txn.Rollback()
 		fmt.Println(err)
+		t.txn.Rollback()
 		return false
 	}
 	return true
@@ -219,12 +219,14 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	t.Assert(t.userShouldBeCreated(u))
 	t.PostForm("/login", d)
 	t.AssertOk()
+	fmt.Println("inserting games")
 	err = insertTestGames(t.txn)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
 	}
 	resetTxn(t.txn, err)
+	fmt.Println("inserting lobby")
 	l, err := insertTestLobby(t.txn, u)
 	if err != nil {
 		fmt.Println(err)
