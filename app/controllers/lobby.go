@@ -112,7 +112,7 @@ func (c LobbyController) isValidState(state string) bool {
 }
 
 func (c LobbyController) isLobbyOwnerFlash(user *models.User, lobbyid int64) bool {
-	// TODO: This does not actually indicate if you are the lobbyowner....
+	// TODO: This does not actually indicate if you are the lobbyowner.... --> FIXED
 	// get lobby
 	user.GetLobby(c.Txn)
 	if user.Lobby.OwnerId != user.Id || user.LobbyId != lobbyid {

@@ -64,31 +64,13 @@ func tearDown() {
 	Dbm.DropTablesIfExists()
 }
 
-func resetTxn(txn *gorp.Transaction, inErr error) {
-	if inErr != nil {
-		fmt.Println("rollback .... ", inErr)
-		txn.Rollback()
-	} else {
-		err := txn.Commit()
-		if err != nil {
-			fmt.Println(err)
-			panic(err)
-		} else {
-			txn, err = Dbm.Begin()
-			if err != nil {
-				fmt.Println(err)
-				panic(err)
-			}
-		}
-	}
-}
-
 func createTestUser() *models.User {
 	r++
 	u := &models.User{
 		Username: "TestUserA" + strconv.Itoa(r),
 		Email:    "no" + strconv.Itoa(r) + "test@accountr.eu",
 		Password: "stronk_hidden_password",
+		LobbyId:  1, //BUG: FIX: TODO: this is not good! In a proper PostgreSQL DB this will cause errors, since Lobby with ID = 1 has not yet been inserted!
 	}
 	return u
 }
@@ -99,6 +81,18 @@ func insertTestUser(txn *gorp.Transaction) (*models.User, string, error) {
 	u.HashPassword()
 	err := txn.Insert(u)
 	return u, p, err
+}
+
+func insertTestUsers(txn *gorp.Transaction) ([]*models.User, error) {
+	var us []*models.User
+	for i := 0; i < 10; i++ {
+		u, _, err := insertTestUser(txn)
+		if err != nil {
+			return nil, err
+		}
+		us = append(us, u)
+	}
+	return us, nil
 }
 
 func createTestLobby() *models.Lobby {
@@ -177,7 +171,6 @@ func (t *AppTest) lobbyShouldBeCreated(l *models.Lobby) bool {
 	err := t.txn.SelectOne(l, "SELECT * FROM lobbys WHERE title = $1", l.Title)
 	if err != nil {
 		fmt.Println(err)
-		t.txn.Rollback()
 		return false
 	}
 	return true
@@ -187,7 +180,6 @@ func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 	err := t.txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
 	if err != nil {
 		fmt.Println(err)
-		t.txn.Rollback()
 		return false
 	}
 	return true
@@ -208,35 +200,42 @@ func (t *AppTest) TestRegisterUser() {
 func (t *AppTest) TestStartAndEndAndRateLobby() {
 	u, pp, err := insertTestUser(t.txn)
 	if err != nil {
+		t.txn.Rollback()
+		panic(err)
+		fmt.Println("panic B")
+	}
+	err = t.txn.Commit()
+	if err != nil {
+		fmt.Println("panic K")
+		panic(err)
+	}
+	t.txn, err = Dbm.Begin()
+	if err != nil {
 		fmt.Println(err)
 		panic(err)
 	}
-	resetTxn(t.txn, err)
+	err = insertTestGames(t.txn)
+	t.txn.Commit()
+	t.txn, err = Dbm.Begin()
 	d := url.Values{}
 	d.Add("username", u.Username)
 	d.Add("password", pp)
 	fmt.Println("user should be created")
-	k := t.userShouldBeCreated(u)
-	fmt.Println("kkk ", k)
-	t.Assert(k)
+	t.Assert(t.userShouldBeCreated(u))
 	t.PostForm("/login", d)
 	t.AssertOk()
-	fmt.Println("inserting games")
-	err = insertTestGames(t.txn)
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
-	resetTxn(t.txn, err)
 	fmt.Println("inserting lobby")
 	l, err := insertTestLobby(t.txn, u)
 	if err != nil {
+		t.txn.Rollback()
 		fmt.Println(err)
 		panic(err)
 	}
-	resetTxn(t.txn, err)
+	t.txn.Commit()
+	t.txn, err = Dbm.Begin()
 	t.Assert(t.lobbyShouldBeCreated(l))
 	fmt.Println(l)
+	// join the lobby
 	t.Get(fmt.Sprintf("/lobby/switch/%d/start", l.Id)) // TODO: Use fmt.Sprintf
 	t.AssertOk()
 	t.AssertStatus(200)
