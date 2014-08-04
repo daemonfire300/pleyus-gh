@@ -223,16 +223,19 @@ func (c LobbyController) Rate(lobbyid int64) revel.Result {
 	}
 	if err == sql.ErrNoRows {
 		c.Flash.Error("Lobby not found")
+		revel.INFO.Println("Lobby not found")
 		return c.Redirect(App.Index)
 	}
 	// only rate lobby which has been started --> then --> ended
 	if !lobby.Ended() {
 		c.Flash.Error("Lobby still ongoing")
+		revel.INFO.Println("Lobby still ongoing")
 		return c.Redirect("/lobby/view/%d", lobbyid)
 	}
 	// check if user is actually participating in the lobby
 	if !lobby.HasPlayer(c.Txn, user) {
 		c.Flash.Error("Not part of this lobby")
+		revel.INFO.Println("User not part of this lobby")
 		return c.Redirect(App.Index)
 	}
 	lobby.GetPlayers(c.Txn)

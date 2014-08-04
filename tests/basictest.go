@@ -186,6 +186,16 @@ func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 	return true
 }
 
+func (t *AppTest) userNewRatingShouldBe(nr int64, u *models.User) bool {
+	err := t.txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("rating of user with ID ", u.Id, " is ", u.Rating)
+	return (nr == u.Rating)
+}
+
 func (t *AppTest) TestRegisterUser() {
 	u := createTestUser()
 	d := url.Values{}
@@ -242,6 +252,28 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	t.AssertStatus(200)
 	t.Get(fmt.Sprintf("/lobby/switch/%d/end", l.Id)) // TODO: Use fmt.Sprintf
 	t.AssertOk()
+	us, err := insertTestUsers(t.txn)
+	if err != nil {
+		t.txn.Rollback()
+		fmt.Println(err)
+		panic(err)
+	}
+	t.txn.Commit()
+	t.txn, err = Dbm.Begin()
+	ur := url.Values{}
+	for _, tu := range us {
+		tid := strconv.FormatInt(tu.Id, 10)
+		ur.Add("rs["+tid+"]", "5")
+		k := t.userShouldBeCreated(tu)
+		t.Assert(k)
+	}
+	fmt.Println(ur)
+	t.PostForm(fmt.Sprintf("/lobby/rate/%d", l.Id), ur)
+	t.AssertOk()
+	for _, tu := range us {
+		k := t.userNewRatingShouldBe(5, tu)
+		t.Assert(k)
+	}
 }
 
 func (t *AppTest) TestCreateLobby() {
