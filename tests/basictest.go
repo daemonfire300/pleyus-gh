@@ -182,6 +182,7 @@ func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 		fmt.Println(err)
 		return false
 	}
+	fmt.Println("User exists with ID: ", u.Id)
 	return true
 }
 
