@@ -247,6 +247,7 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	t.Assert(t.lobbyShouldBeCreated(l))
 	fmt.Println(l)
 	// join the lobby
+	fmt.Println(fmt.Sprintf("/lobby/switch/%d/end", l.Id))
 	t.Get(fmt.Sprintf("/lobby/switch/%d/start", l.Id)) // TODO: Use fmt.Sprintf
 	t.AssertOk()
 	t.AssertStatus(200)

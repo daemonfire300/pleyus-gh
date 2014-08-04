@@ -155,12 +155,12 @@ func (c LobbyController) State(lobbyid int64, state string) revel.Result {
 }
 
 func (c LobbyController) startLobby(lobby *models.Lobby) {
-	time.Sleep(time.Millisecond * 5000)
+	//time.Sleep(time.Millisecond * 5000 * 0)
 	lobby.State = "started"
-	c.DatabaseController.Begin()
+	//c.DatabaseController.Begin()
 	c.UpdateLobby(lobby)
-	c.DatabaseController.Commit()
-	c.DatabaseController.Rollback()
+	//c.DatabaseController.Commit()
+	//c.DatabaseController.Rollback()
 }
 
 func (c LobbyController) StartOrEndLobby(lobbyid int64, a string) revel.Result {
@@ -202,7 +202,8 @@ func (c LobbyController) StartOrEndLobby(lobbyid int64, a string) revel.Result {
 	}
 	c.UpdateLobby(lobby)
 	if a == "start" {
-		go c.startLobby(lobby)
+		//go c.startLobby(lobby)
+		c.startLobby(lobby)
 	}
 	return c.Redirect("/lobby/view/%d", lobbyid)
 }
@@ -245,20 +246,19 @@ func (c LobbyController) Rate(lobbyid int64) revel.Result {
 		return c.Render(lobbyid, ps)
 	}
 	// method == POST	: Get ratings and apply them
-	var pl []models.User
 	for k, v := range rs {
 		p, ok := ps[k]
 		if !ok || k == user.Id {
 			continue
 		}
 		p.ApplyRating(v)
-		pl = append(pl, *p)
+		err = c.Txn.Insert(p)
+		if err != nil {
+			revel.INFO.Println(err)
+			return c.Redirect("/lobby/rate/%d", lobbyid)
+		}
 	}
-	err = c.Txn.Insert(&pl)
-	if err != nil {
-		revel.INFO.Println(err)
-		return c.Redirect("/lobby/rate/%d", lobbyid)
-	}
+
 	return c.Redirect(App.Index)
 }
 
