@@ -252,7 +252,8 @@ func (c LobbyController) Rate(lobbyid int64) revel.Result {
 			continue
 		}
 		p.ApplyRating(v)
-		err = c.Txn.Insert(p)
+		aff, err := c.Txn.Update(p)
+		revel.INFO.Println("Affected rows (raw): ", aff)
 		if err != nil {
 			revel.INFO.Println(err)
 			return c.Redirect("/lobby/rate/%d", lobbyid)
