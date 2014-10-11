@@ -7,5 +7,6 @@ type App struct {
 }
 
 func (c App) Index() revel.Result {
+	//revel.WARN.Printf("%#v", revel.CodePaths)
 	return c.Render()
 }
