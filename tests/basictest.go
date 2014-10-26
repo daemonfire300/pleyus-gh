@@ -201,8 +201,8 @@ func (t *AppTest) lobbyNewRatingShouldBe(nr int, lid int64) bool {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Println("rating of lobby with ID ", lid, " is ", l.(models.Lobby).Rating)
-	return (nr == l.(models.Lobby).Rating)
+	fmt.Println("rating of lobby with ID ", lid, " is ", l.(models.Lobby*).Rating)
+	return (nr == l.(models.Lobby*).Rating)
 }
 
 func (t *AppTest) TestRegisterUser() {
