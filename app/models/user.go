@@ -1,10 +1,11 @@
 package models
 
 import (
+	"time"
+
 	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/coopernurse/gorp"
 	"github.com/revel/revel"
-	"time"
 )
 
 type User struct {
@@ -19,7 +20,7 @@ type User struct {
 	LobbyId   int64
 	XP        int64
 	ELO       int64
-	Rating    int64
+	Rating    int
 }
 
 func NewUser(id int64, username string, email string, password string, salt string, lobby *Lobby) *User {
@@ -59,8 +60,8 @@ func (u *User) ValidatePassword(v *revel.Validation, password string) {
 	v.Required(err == nil)
 }
 
-func (u *User) ApplyRating(r int64) {
-	if -10 < r || r < 10 {
+func (u *User) ApplyRating(r int) {
+	if revel.ValidRange(-10, 10).IsSatisfied(r) {
 		u.Rating += r
 	}
 }

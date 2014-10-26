@@ -211,7 +211,7 @@ func (c LobbyController) StartOrEndLobby(lobbyid int64, a string) revel.Result {
 
 // rs : ratings
 func (c LobbyController) Rate(lobbyid int64) revel.Result {
-	var rs map[int64]int64
+	var rs map[int64]int
 	c.Params.Bind(&rs, "rs")
 	user, err := c.getUser()
 	if err != nil {
@@ -248,7 +248,7 @@ func (c LobbyController) Rate(lobbyid int64) revel.Result {
 	}
 	// method == POST	: Get ratings and apply them
 	lr, ok := rs[0]
-	if ok && lobby.IsValidRating(lr.(int)) {
+	if ok && lobby.IsValidRating(lr) {
 		lobby.Rating += lr
 	}
 	c.Txn.Update(lobby)
