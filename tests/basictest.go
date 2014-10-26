@@ -195,6 +195,16 @@ func (t *AppTest) userNewRatingShouldBe(nr int, u *models.User) bool {
 	return (nr == u.Rating)
 }
 
+func (t *AppTest) lobbyNewRatingShouldBe(nr int, lid int64) bool {
+	l, err := t.txn.Get(models.Lobby{}, lid)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	fmt.Println("rating of lobby with ID ", lid, " is ", l.Rating)
+	return (nr == l.Rating)
+}
+
 func (t *AppTest) TestRegisterUser() {
 	u := createTestUser()
 	d := url.Values{}
@@ -260,6 +270,8 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	t.txn.Commit()
 	t.txn, err = Dbm.Begin()
 	ur := url.Values{}
+	// add ratting for ID 0 == lobby.Rating
+	ur.Add("rs[0]", "7")
 	for _, tu := range us {
 		tid := strconv.FormatInt(tu.Id, 10)
 		ur.Add("rs["+tid+"]", "5")
@@ -269,6 +281,7 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	fmt.Println(ur)
 	t.PostForm(fmt.Sprintf("/lobby/rate/%d", l.Id), ur)
 	t.AssertOk()
+	t.Assert(t.lobbyNewRatingShouldBe(7, l.Id))
 	for _, tu := range us {
 		k := t.userNewRatingShouldBe(5, tu)
 		t.Assert(k)
