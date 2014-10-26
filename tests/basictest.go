@@ -196,14 +196,12 @@ func (t *AppTest) userNewRatingShouldBe(nr int, u *models.User) bool {
 }
 
 func (t *AppTest) lobbyNewRatingShouldBe(nr int, lid int64) bool {
-	var l models.Lobby
-
 	l, err := t.txn.Get(models.Lobby{}, lid)
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Println("rating of lobby with ID ", lid, " is ", l.Rating)
+	fmt.Println("rating of lobby with ID ", lid, " is ", l.(models.Lobby).Rating)
 	return (nr == l.Rating)
 }
 
