@@ -1,16 +1,15 @@
 package tests
 
 import (
-	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
 	"database/sql"
 	"fmt"
+	"net/url"
+	"strconv"
+
+	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
 	"github.com/coopernurse/gorp"
 	_ "github.com/lib/pq"
 	"github.com/revel/revel"
-	//"net/http"
-	//"net/http/cookiejar"
-	"net/url"
-	"strconv"
 )
 
 var (

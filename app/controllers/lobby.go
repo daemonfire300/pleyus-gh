@@ -3,10 +3,11 @@ package controllers
 import (
 	"database/sql"
 	//"github.com/daemonfire300/pleyusweb/app/models"
-	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
-	"github.com/revel/revel"
 	"strings"
 	"time"
+
+	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
+	"github.com/revel/revel"
 )
 
 type LobbyController struct {
@@ -246,6 +247,11 @@ func (c LobbyController) Rate(lobbyid int64) revel.Result {
 		return c.Render(lobbyid, ps)
 	}
 	// method == POST	: Get ratings and apply them
+	lr = rs[0]
+	if lr {
+		lobby.Rating += lr
+	}
+	c.Txn.Update(lobby)
 	for k, v := range rs {
 		p, ok := ps[k]
 		if !ok || k == user.Id {

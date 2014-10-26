@@ -1,13 +1,14 @@
 package models
 
 import (
-	"code.google.com/p/go.crypto/bcrypt"
 	"database/sql"
 	"fmt"
-	"github.com/coopernurse/gorp"
-	"github.com/revel/revel"
 	"strconv"
 	"time"
+
+	"code.google.com/p/go.crypto/bcrypt"
+	"github.com/coopernurse/gorp"
+	"github.com/revel/revel"
 )
 
 type Lobby struct {

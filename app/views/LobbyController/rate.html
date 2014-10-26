@@ -19,6 +19,20 @@
     </thead>
     <tbody>
     {{ if .ps}}
+    <tr>
+      <td><small class="bg-info text-uppercase">LOBBY</small> (Rate this lobby in general)</td>
+      <td>
+        <select name="rs[0]">
+          <option value="0" name="0">0</option>
+          <option value="1" name="1">1</option>
+          <option value="2" name="2">2</option>
+          <option value="3" name="3">3</option>
+          <option value="4" name="4">4</option>
+          <option value="5" name="5">5</option>
+          <option value="6" name="6">6</option>
+        </select>
+    </td>
+    </tr>
     {{ $me :=  .authUser }}
     {{ range .ps }}
     <tr>
