@@ -196,6 +196,7 @@ func (t *AppTest) userNewRatingShouldBe(nr int, u *models.User) bool {
 }
 
 func (t *AppTest) lobbyNewRatingShouldBe(nr int, lid int64) bool {
+	var l models.Lobby
 	l, err := t.txn.Get(models.Lobby{}, lid)
 	if err != nil {
 		fmt.Println(err)
