@@ -185,7 +185,7 @@ func (t *AppTest) userShouldBeCreated(u *models.User) bool {
 	return true
 }
 
-func (t *AppTest) userNewRatingShouldBe(nr int64, u *models.User) bool {
+func (t *AppTest) userNewRatingShouldBe(nr int, u *models.User) bool {
 	err := t.txn.SelectOne(u, "SELECT * FROM users WHERE username = $1 AND email = $2", u.Username, u.Email)
 	if err != nil {
 		fmt.Println(err)
