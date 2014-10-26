@@ -91,6 +91,10 @@ func (lobby *Lobby) Validate(v *revel.Validation) {
 	v.Required(lobby.GameId)
 }
 
+func (l *Lobby) IsValidRating(r int) bool {
+	return revel.ValidRange(0, 10).IsSatisfied(r)
+}
+
 func (l *Lobby) PreInsert(_ gorp.SqlExecutor) error {
 	if l.Owner != nil {
 		l.OwnerId = l.Owner.Id

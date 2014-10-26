@@ -247,8 +247,8 @@ func (c LobbyController) Rate(lobbyid int64) revel.Result {
 		return c.Render(lobbyid, ps)
 	}
 	// method == POST	: Get ratings and apply them
-	lr = rs[0]
-	if lr {
+	lr, ok := rs[0]
+	if ok && lobby.IsValidRating(lr) {
 		lobby.Rating += lr
 	}
 	c.Txn.Update(lobby)
