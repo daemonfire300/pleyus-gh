@@ -5,6 +5,7 @@ import (
 
 	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/coopernurse/gorp"
+	"github.com/daemonfire300/pleyusweb/app/models"
 	"github.com/revel/revel"
 )
 
@@ -17,7 +18,6 @@ type User struct {
 	LastLogin time.Time
 	Created   time.Time
 	Lobby     *Lobby
-	LobbyId   int64
 	XP        int64
 	ELO       int64
 	Rating    int
@@ -74,6 +74,8 @@ func (u *User) IsOwner() bool {
 	}
 }
 
+/*
+old 1.11.2014
 func (u *User) GetLobby(txn *gorp.Transaction) {
 	var (
 		obj interface{}
@@ -89,11 +91,19 @@ func (u *User) GetLobby(txn *gorp.Transaction) {
 			u.Lobby = obj.(*Lobby)
 		}
 	}
-}
+}*/
 
 func (u *User) HasLobby(txn *gorp.Transaction) bool {
 	u.GetLobby(txn)
 	return (u.Lobby != nil)
+}
+
+func (u *User) GetLobby(txn *gorp.Transaction) (*models.Lobby, bool) {
+	obj, err := c.Txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+	if err != nil {
+		revel.INFO.Println("Error while getting lobby: ", err)
+	}
+	return obj, (err != nil)
 }
 
 func (u *User) PreInsert(_ gorp.SqlExecutor) error {

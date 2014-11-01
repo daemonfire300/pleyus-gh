@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"database/sql"
+
 	"github.com/coopernurse/gorp"
 	//"github.com/daemonfire300/pleyusweb/app/models"
 	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
@@ -43,6 +44,7 @@ func setupTables() {
 	lobbymetaTable := Dbm.AddTableWithName(models.LobbyMeta{}, "lobbymeta").SetKeys(true, "Id")
 
 	userTable.ColMap("Lobby").Transient = true
+	userTable.ColMap("LobbyId").Transient = true
 	lobbyTable.ColMap("Owner").Transient = true
 	lobbyTable.ColMap("Game").Transient = true
 	lobbyTable.ColMap("Players").Transient = true

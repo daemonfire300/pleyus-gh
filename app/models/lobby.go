@@ -145,7 +145,7 @@ func (l *Lobby) PostGet(exe gorp.SqlExecutor) error {
 }
 
 func (l *Lobby) GetPlayers(txn *gorp.Transaction) {
-	plrs, err := txn.Select(User{}, "SELECT * FROM users WHERE lobbyid = $1", l.Id)
+	plrs, err := txn.Select(User{}, "SELECT u.* FROM userlobby ul INNER JOIN users u ON u.id = ul.userid WHERE ul.active = $1 AND ul.lobbyid = $2", true, l.Id)
 	l.Players = make(map[int64]*User)
 	if err != nil {
 		revel.INFO.Println(err)

@@ -8,6 +8,8 @@ type LobbyUser struct {
 	Id      int64
 	UserId  int64
 	LobbyId int64
+	Rated   bool
+	Active  bool
 	Lobby   *Lobby
 	User    *User
 }
