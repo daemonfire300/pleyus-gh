@@ -120,6 +120,16 @@ func (u *User) PreUpdate(_ gorp.SqlExecutor) error {
 	return nil
 }
 
+// TODO: Add functionality for multi-lobby support
+func (u *User) FinishLobby(txn *gorp.Transaction) error {
+	aff, err := txn.Exec("UPDATE userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+	if err != nil {
+		revel.INFO.Println("Error while getting lobby: ", err)
+		return err
+	}
+	return nil
+}
+
 /*func (u *User) PostGet(exe gorp.SqlExecutor) error {
 	var (
 		obj interface{}

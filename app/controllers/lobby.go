@@ -265,6 +265,11 @@ func (c LobbyController) Rate(lobbyid int64) revel.Result {
 			return c.Redirect("/lobby/rate/%d", lobbyid)
 		}
 	}
+	err = user.FinishLobby(c.Txn)
+	if err != nil {
+		revel.INFO.Println(err)
+	}
+	// user send ratings, time to clink him out of the lobby and mark it as rated and inactive
 
 	return c.Redirect(App.Index)
 }
