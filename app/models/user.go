@@ -5,7 +5,6 @@ import (
 
 	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/coopernurse/gorp"
-	"github.com/daemonfire300/pleyusweb/app/models"
 	"github.com/revel/revel"
 )
 
