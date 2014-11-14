@@ -20,6 +20,7 @@ type User struct {
 	XP        int64
 	ELO       int64
 	Rating    int
+	LobbyId   int64
 }
 
 func NewUser(id int64, username string, email string, password string, salt string, lobby *Lobby) *User {
@@ -97,8 +98,8 @@ func (u *User) HasLobby(txn *gorp.Transaction) bool {
 	return (u.Lobby != nil)
 }
 
-func (u *User) GetLobby(txn *gorp.Transaction) (*models.Lobby, bool) {
-	obj, err := c.Txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+func (u *User) GetLobby(txn *gorp.Transaction) (Lobby, bool) {
+	obj, err := Txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
 	if err != nil {
 		revel.INFO.Println("Error while getting lobby: ", err)
 	}
