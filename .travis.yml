@@ -8,20 +8,15 @@ language: go
 
 install:
 	- export PATH=$PATH:$HOME/gopath/bin
-	# Annoyingly, we can not use go get revel/... because references to app/routes package fail
 	- go get -v github.com/revel/cmd/revel
 	- go get -v github.com/revel/revel/cache
 	- go get -v github.com/revel/revel/harness
 	- go get -v github.com/coopernurse/gorp
 	- go get -v code.google.com/p/go.crypto/bcrypt
-	- go get -v github.com/mattn/go-sqlite3
 	- go get -v github.com/robfig/cron
-	- go get -v code.google.com/p/goauth2/oauth
-	- go get -v github.com/mrjones/oauth
 
 script:
 	- revel test bitbucket.org/daemonfire300/pleyus-alpha test
 
 go:
-  - 1.2
-  - tip
+  - 1.3
