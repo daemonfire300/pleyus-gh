@@ -98,12 +98,12 @@ func (u *User) HasLobby(txn *gorp.Transaction) bool {
 	return (u.Lobby != nil)
 }
 
-func (u *User) GetLobby(txn *gorp.Transaction) (Lobby, bool) {
-	obj, err := Txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+func (u *User) GetLobby(txn *gorp.Transaction) (*Lobby, bool) {
+	err := txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
 	if err != nil {
 		revel.INFO.Println("Error while getting lobby: ", err)
 	}
-	return obj, (err != nil)
+	return u.Lobby, (err != nil)
 }
 
 func (u *User) PreInsert(_ gorp.SqlExecutor) error {
@@ -123,6 +123,7 @@ func (u *User) PreUpdate(_ gorp.SqlExecutor) error {
 // TODO: Add functionality for multi-lobby support
 func (u *User) FinishLobby(txn *gorp.Transaction) error {
 	aff, err := txn.Exec("UPDATE userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+	revel.INFO.Println("Aff rows: ", aff)
 	if err != nil {
 		revel.INFO.Println("Error while getting lobby: ", err)
 		return err
