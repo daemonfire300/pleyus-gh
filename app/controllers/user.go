@@ -3,10 +3,10 @@ package controllers
 import (
 	"database/sql"
 	"errors"
-	//"github.com/daemonfire300/pleyusweb/app/models"
+	"strconv"
+
 	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
 	"github.com/revel/revel"
-	"strconv"
 )
 
 type UserController struct {

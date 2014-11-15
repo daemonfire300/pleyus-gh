@@ -3,9 +3,8 @@ package controllers
 import (
 	"database/sql"
 
-	"github.com/coopernurse/gorp"
-	//"github.com/daemonfire300/pleyusweb/app/models"
 	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
+	"github.com/coopernurse/gorp"
 	_ "github.com/lib/pq"
 	"github.com/revel/revel"
 )

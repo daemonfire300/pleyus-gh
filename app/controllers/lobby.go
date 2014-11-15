@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"database/sql"
-	//"github.com/daemonfire300/pleyusweb/app/models"
 	"strings"
 	"time"
 

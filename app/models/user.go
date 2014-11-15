@@ -5,7 +5,6 @@ import (
 
 	"code.google.com/p/go.crypto/bcrypt"
 	"github.com/coopernurse/gorp"
-	"github.com/daemonfire300/pleyusweb/app/models"
 	"github.com/revel/revel"
 )
 
@@ -98,15 +97,15 @@ func (u *User) HasLobby(txn *gorp.Transaction) bool {
 	return (u.Lobby != nil)
 }
 
-func (u *User) GetLobby(txn *gorp.Transaction) (*models.Lobby, bool) {
-	obj, err := c.Txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+func (u *User) GetLobby(txn *gorp.Transaction) (*Lobby, bool) {
+	err := txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
 	if err != nil {
 		revel.INFO.Println("Error while getting lobby: ", err)
 	}
-	return obj, (err != nil)
+	return u.Lobby, (err != nil)
 }
 
-func (u *User) PreInsert(_ gorp.SqlExecutor) error {
+/*func (u *User) PreInsert(_ gorp.SqlExecutor) error {
 	if u.Lobby != nil {
 		u.LobbyId = u.Lobby.Id
 	}
@@ -118,13 +117,14 @@ func (u *User) PreUpdate(_ gorp.SqlExecutor) error {
 		u.LobbyId = u.Lobby.Id
 	}
 	return nil
-}
+}*/
 
 // TODO: Add functionality for multi-lobby support
 func (u *User) FinishLobby(txn *gorp.Transaction) error {
 	aff, err := txn.Exec("UPDATE userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+	revel.INFO.Println("Aff. Rows: ", aff)
 	if err != nil {
-		revel.INFO.Println("Error while getting lobby: ", err)
+		revel.INFO.Println("Error while finishing lobby for user: ", u.Id, err)
 		return err
 	}
 	return nil
