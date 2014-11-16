@@ -14,6 +14,7 @@ install:
   - go get -v github.com/coopernurse/gorp
   - go get -v code.google.com/p/go.crypto/bcrypt
   - go get -v github.com/robfig/cron
+  - go get bitbucket.org/daemonfire300/pleyus-alpha
 
 script:
   - revel test bitbucket.org/daemonfire300/pleyus-alpha test
