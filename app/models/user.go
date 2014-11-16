@@ -97,6 +97,13 @@ func (u *User) HasLobby(txn *gorp.Transaction) bool {
 	return (u.Lobby != nil)
 }
 
+func (u *User) InLobby(lobbyid int64) bool {
+	if u.Lobby == nil {
+		return false
+	}
+	return (u.Lobby.Id == lobbyid)
+}
+
 func (u *User) GetLobby(txn *gorp.Transaction) (*Lobby, bool) {
 	err := txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
 	if err != nil {
@@ -121,12 +128,24 @@ func (u *User) PreUpdate(_ gorp.SqlExecutor) error {
 
 // TODO: Add functionality for multi-lobby support
 func (u *User) FinishLobby(txn *gorp.Transaction) error {
-	aff, err := txn.Exec("UPDATE userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+	aff, err := txn.Exec("UPDATE userlobby SET active = FALSE, rated = TRUE WHERE userid=$1 AND active=$2", u.Id, true)
 	revel.INFO.Println("Aff. Rows: ", aff)
 	if err != nil {
 		revel.INFO.Println("Error while finishing lobby for user: ", u.Id, err)
 		return err
 	}
+	u.Lobby = nil
+	return nil
+}
+
+func (u *User) RemoveCurrentLobby(txn *gorp.Transaction) error {
+	aff, err := txn.Exec("DELETE FROM userlobby WHERE userid=$1 AND active=$2 AND rated=FALSE", u.Id, true)
+	revel.INFO.Println("Aff. Rows: ", aff)
+	if err != nil {
+		revel.INFO.Println("Error while removing current lobby from user: ", u.Id, err)
+		return err
+	}
+	u.Lobby = nil
 	return nil
 }
 

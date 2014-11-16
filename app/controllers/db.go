@@ -43,7 +43,6 @@ func setupTables() {
 	lobbymetaTable := Dbm.AddTableWithName(models.LobbyMeta{}, "lobbymeta").SetKeys(true, "Id")
 
 	userTable.ColMap("Lobby").Transient = true
-	userTable.ColMap("LobbyId").Transient = true
 	lobbyTable.ColMap("Owner").Transient = true
 	lobbyTable.ColMap("Game").Transient = true
 	lobbyTable.ColMap("Players").Transient = true

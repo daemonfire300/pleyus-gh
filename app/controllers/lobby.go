@@ -68,7 +68,7 @@ func (c LobbyController) Join(lobbyid int64) revel.Result {
 	if err != nil {
 		return c.Redirect(UserController.Login)
 	}
-	if user.LobbyId > 0 {
+	if user.HasLobby(c.Txn) {
 		return c.RenderJson("you already are part of a lobby")
 	}
 
@@ -114,8 +114,11 @@ func (c LobbyController) isValidState(state string) bool {
 func (c LobbyController) isLobbyOwnerFlash(user *models.User, lobbyid int64) bool {
 	// TODO: This does not actually indicate if you are the lobbyowner.... --> FIXED
 	// get lobby
-	user.GetLobby(c.Txn)
-	if user.Lobby.OwnerId != user.Id || user.LobbyId != lobbyid {
+	if !user.HasLobby(c.Txn) {
+		c.Flash.Error("You are not in a lobby")
+		return false
+	}
+	if user.Lobby.OwnerId != user.Id {
 		c.Flash.Error("You are not the lobby owner")
 		return false
 	}
@@ -327,7 +330,7 @@ func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
 	canViewLobby := true
 	hasPassword := (lobby.Password.String != "")
 	lobby.GetPlayers(c.Txn)
-	if user.LobbyId == 0 {
+	if !user.HasLobby(c.Txn) {
 		canJoinLobby = true
 	}
 	if canJoinLobby && lobby.Access == "private" && lobby.OwnerId != user.Id {
@@ -360,8 +363,7 @@ func (c LobbyController) KickPlayer(userid int64, lobbyid int64) revel.Result {
 		c.Flash.Error("Error")
 		return c.Redirect(c.Request.Referer())
 	}
-	target.LobbyId = 0
-	c.UpdateUser(target)
+	target.RemoveCurrentLobby(c.Txn)
 	c.Flash.Success("Kicked Player " + target.Username)
 	return c.Redirect(c.Request.Referer())
 }
@@ -370,6 +372,10 @@ func (c LobbyController) InvitePlayer(userid int64) revel.Result {
 	user, err := c.getUser()
 	if err != nil {
 		return c.Redirect(UserController.Login)
+	}
+	if !user.HasLobby(c.Txn) {
+		c.Flash.Error("You can not invite someone to a lobby you are not a part of")
+		return c.Redirect(c.Request.Referer())
 	}
 	if user.Id == userid {
 		c.Flash.Error("You can not invite yourself")
@@ -380,7 +386,8 @@ func (c LobbyController) InvitePlayer(userid int64) revel.Result {
 		c.Flash.Error("User not found")
 		return c.Redirect(c.Request.Referer())
 	}
-	if targetUser.LobbyId == user.LobbyId {
+	targetUser.GetLobby(c.Txn)
+	if targetUser.InLobby(user.Lobby.Id) {
 		c.Flash.Error("User is already in the lobby")
 		return c.Redirect(c.Request.Referer())
 	}
@@ -388,7 +395,7 @@ func (c LobbyController) InvitePlayer(userid int64) revel.Result {
 	invite := models.LobbyInvite{
 		From:    user.Id,
 		To:      userid,
-		LobbyId: user.LobbyId,
+		LobbyId: user.Lobby.Id,
 		Status:  "unanswered",
 	}
 	err = c.Txn.SelectOne(&invite, "SELECT * FROM lobbyinvites WHERE from=$1 AND to=$2 AND lobbyid=$3 AND status=$4", invite.From, invite.To, invite.LobbyId, invite.Status)
@@ -410,28 +417,24 @@ func (c LobbyController) Leave(lobbyid int64) revel.Result {
 		return c.Redirect(UserController.Login)
 	}
 	user.GetLobby(c.Txn)
-	if user.LobbyId == lobbyid {
-		if user.Id == user.Lobby.OwnerId {
-			user.Lobby.GetPlayers(c.Txn)
-			for k, plr := range user.Lobby.Players {
-				user.Lobby.Players[k].LobbyId = 0
-				user.Lobby.Players[k].Lobby = nil
-				_, err = c.Txn.Update(plr)
-			}
-			_, err = c.Txn.Delete(user.Lobby)
-		} else {
-			user.LobbyId = 0
-			user.Lobby = nil
-			_, err = c.Txn.Update(user)
-		}
-		if err != nil {
-			revel.INFO.Println(err)
-		}
-		c.Flash.Success("Left the lobby")
-		return c.Redirect(App.Index)
-	} else {
+	if !user.InLobby(lobbyid) {
 		return c.Redirect(App.Index)
 	}
+	if user.IsOwner() {
+		user.Lobby.GetPlayers(c.Txn)
+		l := *(user.Lobby)
+		for k, _ := range user.Lobby.Players {
+			err = user.Lobby.Players[k].RemoveCurrentLobby(c.Txn)
+		}
+		_, err = c.Txn.Delete(l)
+	} else {
+		err = user.RemoveCurrentLobby(c.Txn)
+	}
+	if err != nil {
+		revel.INFO.Println(err)
+	}
+	c.Flash.Success("Left the lobby")
+	return c.Redirect(App.Index)
 }
 
 func (c LobbyController) Create() revel.Result {

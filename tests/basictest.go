@@ -69,7 +69,6 @@ func createTestUser() *models.User {
 		Username: "TestUserA" + strconv.Itoa(r),
 		Email:    "no" + strconv.Itoa(r) + "test@accountr.eu",
 		Password: "stronk_hidden_password",
-		LobbyId:  1, //BUG: FIX: TODO: this is not good! In a proper PostgreSQL DB this will cause errors, since Lobby with ID = 1 has not yet been inserted!
 	}
 	return u
 }
@@ -110,7 +109,16 @@ func insertTestLobby(txn *gorp.Transaction, o *models.User) (*models.Lobby, erro
 	l := createTestLobby()
 	l.Owner = o
 	l.GameId = 3
+	ul := &models.LobbyUser{
+		Rated:  false,
+		Active: true,
+		Lobby:  l,
+		User:   o,
+	}
 	err := txn.Insert(l)
+	if o != nil {
+		err = txn.Insert(ul)
+	}
 	return l, err
 }
 
