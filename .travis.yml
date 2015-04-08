@@ -8,13 +8,14 @@ language: go
 
 install:
   - export PATH=$PATH:$HOME/gopath/bin
-  - go get -v github.com/revel/revel
-  - go get -v github.com/revel/cmd/revel
   - go get -v github.com/go-gorp/gorp
   - go get -v code.google.com/p/go.crypto/bcrypt
-  - go get -d github.com/daemonfire300/pleyus-gh
+  - go get -t github.com/revel/revel
+  - go get -t github.com/revel/cmd/revel
+  - go get bitbucket.org/daemonfire300/pleyus-alpha
 
 script:
+  - revel clean bitbucket.org/daemonfire300/pleyus-alpha
   - revel test bitbucket.org/daemonfire300/pleyus-alpha test AppTest
 
 go:
