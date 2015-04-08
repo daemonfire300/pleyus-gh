@@ -7,7 +7,7 @@
     <span>Starts in about {{ .startsInMinutes }} minute(s)</span>
   </div>
   <div class="row">
-    {{ if eq .authUser.LobbyId .lobby.Id }}
+    {{ if .inLobby }}
     <div>
       <a href="{{url "LobbyController.Leave" .lobby.Id}}">Leave Lobby</a>
     </div>

@@ -4,7 +4,8 @@ import (
 	"time"
 
 	"code.google.com/p/go.crypto/bcrypt"
-	"github.com/coopernurse/gorp"
+	//"github.com/coopernurse/gorp"
+	"github.com/go-gorp/gorp"
 	"github.com/revel/revel"
 )
 
@@ -105,8 +106,9 @@ func (u *User) InLobby(lobbyid int64) bool {
 }
 
 func (u *User) GetLobby(txn *gorp.Transaction) (*Lobby, bool) {
-	err := txn.SelectOne(u.Lobby, "SELECT * FROM userlobby WHERE userid=$1 AND active=$2", u.Id, true)
+	err := txn.SelectOne(&u.Lobby, "SELECT l.* FROM userlobby ul INNER JOIN lobbys l ON l.id = ul.lobbyid  WHERE userid=$1 AND active=$2", u.Id, true)
 	if err != nil {
+		revel.INFO.Println("Error lobby ", u.Lobby)
 		revel.INFO.Println("Error while getting lobby: ", err)
 	}
 	return u.Lobby, (err != nil)

@@ -7,7 +7,8 @@ import (
 	"strconv"
 
 	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
-	"github.com/coopernurse/gorp"
+	//"github.com/coopernurse/gorp"
+	"github.com/go-gorp/gorp"
 	_ "github.com/lib/pq"
 	"github.com/revel/revel"
 )
@@ -60,7 +61,7 @@ func setupTables() {
 }
 
 func tearDown() {
-	Dbm.DropTablesIfExists()
+	Dbm.DropTables()
 }
 
 func createTestUser() *models.User {
@@ -71,6 +72,20 @@ func createTestUser() *models.User {
 		Password: "stronk_hidden_password",
 	}
 	return u
+}
+
+func addUserToLobby(txn *gorp.Transaction, user *models.User, l *models.Lobby) error {
+	ul := &models.LobbyUser{
+		User:   user,
+		Lobby:  l,
+		Active: true,
+		Rated:  false,
+	}
+	err := txn.Insert(ul)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
 }
 
 func insertTestUser(txn *gorp.Transaction) (*models.User, string, error) {
@@ -264,18 +279,26 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 	t.Assert(t.lobbyShouldBeCreated(l))
 	fmt.Println(l)
 	// join the lobby
-	t.Get(fmt.Sprintf("/lobby/switch/%d/start", l.Id)) // TODO: Use fmt.Sprintf
-	t.AssertOk()
-	t.AssertStatus(200)
-	t.Get(fmt.Sprintf("/lobby/switch/%d/end", l.Id)) // TODO: Use fmt.Sprintf
-	t.AssertOk()
 	us, err := insertTestUsers(t.txn)
 	if err != nil {
 		t.txn.Rollback()
 		fmt.Println(err)
 		panic(err)
 	}
+	for _, tu := range us {
+		addUserToLobby(t.txn, tu, l)
+	}
 	t.txn.Commit()
+	t.txn, err = Dbm.Begin()
+	fmt.Println("Starting lobby")
+	t.Get(fmt.Sprintf("/lobby/switch/%d/start", l.Id)) // TODO: Use fmt.Sprintf
+	t.AssertOk()
+	t.AssertStatus(200)
+	fmt.Println("Ending lobby")
+	t.Get(fmt.Sprintf("/lobby/switch/%d/end", l.Id)) // TODO: Use fmt.Sprintf
+	t.AssertOk()
+	t.txn.Commit()
+	//t.Get(fmt.Sprintf("/lobby/join/%d", l.Id))
 	t.txn, err = Dbm.Begin()
 	ur := url.Values{}
 	// add ratting for ID 0 == lobby.Rating
@@ -286,7 +309,8 @@ func (t *AppTest) TestStartAndEndAndRateLobby() {
 		k := t.userShouldBeCreated(tu)
 		t.Assert(k)
 	}
-	fmt.Println(ur)
+	fmt.Println("ur", ur)
+	fmt.Println("Rating lobby")
 	t.PostForm(fmt.Sprintf("/lobby/rate/%d", l.Id), ur)
 	t.AssertOk()
 	t.Assert(t.lobbyNewRatingShouldBe(7, l.Id))

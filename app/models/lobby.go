@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"code.google.com/p/go.crypto/bcrypt"
-	"github.com/coopernurse/gorp"
+	//"github.com/coopernurse/gorp"
+	"github.com/go-gorp/gorp"
 	"github.com/revel/revel"
 )
 
@@ -161,7 +162,7 @@ func (l *Lobby) GetPlayers(txn *gorp.Transaction) {
 // have been rated etc, this will still return true if the lobby has not been cleared yet.
 // NOTE: This method DOES NOT check if the lobby exists.
 func (l *Lobby) HasPlayer(txn *gorp.Transaction, p *User) (r bool) {
-	h, err := txn.SelectStr("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND lobbyid = $2)", p.Id, l.Id)
+	h, err := txn.SelectStr("SELECT EXISTS(SELECT 1 FROM userlobby ul WHERE ul.userid = $1 AND ul.lobbyid = $2)", p.Id, l.Id)
 	if err != nil {
 		revel.INFO.Println(err)
 	}

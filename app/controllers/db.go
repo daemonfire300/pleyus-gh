@@ -4,7 +4,8 @@ import (
 	"database/sql"
 
 	"bitbucket.org/daemonfire300/pleyus-alpha/app/models"
-	"github.com/coopernurse/gorp"
+	//"github.com/coopernurse/gorp"
+	"github.com/go-gorp/gorp"
 	_ "github.com/lib/pq"
 	"github.com/revel/revel"
 )
@@ -117,6 +118,20 @@ func (c *DatabaseController) GetUserByName(username string) (*models.User, error
 	}
 	revel.INFO.Println(user)
 	return &user, nil
+}
+
+func (c *DatabaseController) AddUserToLobby(user *models.User, l *models.Lobby) error {
+	ul := &models.LobbyUser{
+		User:   user,
+		Lobby:  l,
+		Active: true,
+		Rated:  false,
+	}
+	err := c.Txn.Insert(ul)
+	if err != nil {
+		revel.INFO.Println(err)
+	}
+	return err
 }
 
 func (c *DatabaseController) SaveUser(user *models.User) {

@@ -1,7 +1,8 @@
 package models
 
 import (
-	"github.com/coopernurse/gorp"
+	//"github.com/coopernurse/gorp"
+	"github.com/go-gorp/gorp"
 )
 
 type LobbyUser struct {

@@ -97,7 +97,11 @@ func (c LobbyController) Join(lobbyid int64) revel.Result {
 	}
 	user.Lobby = lobby
 	c.UpdateUser(user)
-
+	err = c.AddUserToLobby(user, lobby)
+	if err != nil {
+		c.Flash.Error("Something went wrong (adding user to lobby)")
+		return c.Redirect(App.Index)
+	}
 	return c.Redirect("/lobby/view/%d", lobbyid)
 }
 
@@ -115,6 +119,7 @@ func (c LobbyController) isLobbyOwnerFlash(user *models.User, lobbyid int64) boo
 	// TODO: This does not actually indicate if you are the lobbyowner.... --> FIXED
 	// get lobby
 	if !user.HasLobby(c.Txn) {
+		revel.INFO.Println("user ", user, " has no lobby")
 		c.Flash.Error("You are not in a lobby")
 		return false
 	}
@@ -177,8 +182,7 @@ func (c LobbyController) StartOrEndLobby(lobbyid int64, a string) revel.Result {
 	var lobby *models.Lobby
 	lobby, err = c.GetLobbyById(lobbyid)
 	if err != nil && err != sql.ErrNoRows {
-		revel.ERROR.Println(err)
-		panic(err)
+		revel.INFO.Println(err)
 	}
 	if err == sql.ErrNoRows {
 		c.Flash.Error("Lobby not found")
@@ -328,6 +332,8 @@ func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
 	}
 	canJoinLobby := false
 	canViewLobby := true
+	user.GetLobby(c.Txn)
+	inLobby := user.InLobby(lobbyid)
 	hasPassword := (lobby.Password.String != "")
 	lobby.GetPlayers(c.Txn)
 	if !user.HasLobby(c.Txn) {
@@ -340,7 +346,7 @@ func (c LobbyController) ViewLobby(lobbyid int64) revel.Result {
 	var meta *models.LobbyMeta
 	meta, err = lobby.GetMeta(c.Txn)
 	startsInMinutes := int(lobby.EstimatedStartTime.Sub(time.Now()).Minutes())
-	return c.Render(lobby, canJoinLobby, canViewLobby, hasPassword, startsInMinutes, meta)
+	return c.Render(lobby, canJoinLobby, canViewLobby, hasPassword, startsInMinutes, meta, inLobby)
 }
 
 func (c LobbyController) KickPlayer(userid int64, lobbyid int64) revel.Result {
@@ -449,8 +455,7 @@ func (c LobbyController) Create() revel.Result {
 func (c LobbyController) GetGames() revel.Result {
 	games, err := c.Txn.Select(models.Game{}, "SELECT * FROM games ORDER BY name ASC")
 	if err != nil && err != sql.ErrNoRows {
-		revel.ERROR.Println(err)
-		panic(err)
+		revel.INFO.Println(err)
 	}
 	return c.RenderJson(games)
 }
@@ -489,6 +494,11 @@ func (c LobbyController) PostCreate(lobby models.Lobby) revel.Result {
 	c.SaveLobby(&lobby)
 	user.Lobby = &lobby
 	c.SaveUser(user)
+	err = c.AddUserToLobby(user, &lobby)
+	if err != nil {
+		c.Flash.Error("Something went wrong (adding user to lobby)")
+		return c.Redirect(App.Index)
+	}
 
 	return c.Redirect(App.Index)
 }
