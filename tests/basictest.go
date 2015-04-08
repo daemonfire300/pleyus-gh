@@ -11,6 +11,7 @@ import (
 	"github.com/go-gorp/gorp"
 	_ "github.com/lib/pq"
 	"github.com/revel/revel"
+	"github.com/revel/revel/testing"
 )
 
 var (
@@ -20,7 +21,7 @@ var (
 )
 
 type AppTest struct {
-	revel.TestSuite
+	testing.TestSuite
 	txn *gorp.Transaction
 }
 
